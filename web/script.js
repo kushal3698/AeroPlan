@@ -313,24 +313,43 @@ function initApp() {
   const exportPdfBtn = document.getElementById('export-pdf-btn');
   if (exportPdfBtn) {
     exportPdfBtn.addEventListener('click', () => {
-      const element = document.getElementById('itinerary-rendered');
+      const sourceElement = document.getElementById('itinerary-rendered');
       const destination = document.getElementById('destination').value || 'Travel-Itinerary';
+      
+      // Create a temporary container for clean rendering
+      const tempContainer = document.createElement('div');
+      tempContainer.className = 'rendered-markdown printing';
+      tempContainer.innerHTML = sourceElement.innerHTML;
+      
+      // Style to render off-screen but retain full layout formatting
+      tempContainer.style.position = 'absolute';
+      tempContainer.style.left = '-9999px';
+      tempContainer.style.top = '0';
+      tempContainer.style.width = '750px'; // optimal A4 portrait pixel width
+      tempContainer.style.background = '#ffffff';
+      tempContainer.style.color = '#0f172a';
+      tempContainer.style.padding = '35px';
+      
+      document.body.appendChild(tempContainer);
+      
       const opt = {
         margin:       [15, 15, 15, 15],
         filename:     `${destination.replace(/[^a-z0-9]/gi, '_').toLowerCase()}_itinerary.pdf`,
         image:        { type: 'jpeg', quality: 0.98 },
-        html2canvas:  { scale: 2, useCORS: true, letterRendering: true },
-        jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
+        html2canvas:  { scale: 2, useCORS: true, letterRendering: true, backgroundColor: '#ffffff' },
+        jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' },
+        pagebreak:    { mode: ['avoid-all', 'css', 'legacy'] }
       };
       
-      element.classList.add('printing');
-      
-      html2pdf().set(opt).from(element).toPdf().get('pdf').then((pdf) => {
-        element.classList.remove('printing');
-      }).save().catch(err => {
-        console.error("PDF generation error:", err);
-        element.classList.remove('printing');
-      });
+      // Introduce brief delay to ensure DOM parses node changes fully before capture
+      setTimeout(() => {
+        html2pdf().set(opt).from(tempContainer).save().then(() => {
+          document.body.removeChild(tempContainer);
+        }).catch(err => {
+          console.error("PDF generation error:", err);
+          document.body.removeChild(tempContainer);
+        });
+      }, 150);
     });
   }
 
