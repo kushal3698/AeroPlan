@@ -1,0 +1,1796 @@
+﻿/* CSS Reset and Variables */
+:root {
+  --bg-app: #090b11;
+  --bg-card: rgba(22, 28, 45, 0.45);
+  --bg-card-hover: rgba(28, 36, 58, 0.55);
+  --border-color: rgba(255, 255, 255, 0.07);
+  --border-glow: rgba(0, 242, 254, 0.25);
+  
+  --text-main: #f3f4f6;
+  --text-muted: #9ca3af;
+  
+  /* Accent Colors */
+  --accent-cyan: #00f2fe;
+  --accent-blue: #3b82f6;
+  --accent-purple: #a855f7;
+  --accent-yellow: #f59e0b;
+  --accent-green: #10b981;
+  --accent-red: #ef4444;
+  
+  --font-main: 'Outfit', sans-serif;
+  --font-alt: 'Plus Jakarta Sans', sans-serif;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: var(--font-main);
+  background-color: var(--bg-app);
+  color: var(--text-main);
+  line-height: 1.5;
+  min-height: 100vh;
+  overflow-x: hidden;
+  background-image: 
+    radial-gradient(circle at 10% 20%, rgba(59, 130, 246, 0.08) 0%, transparent 40%),
+    radial-gradient(circle at 90% 80%, rgba(168, 85, 247, 0.08) 0%, transparent 40%);
+  background-attachment: fixed;
+}
+
+/* App Container Layout */
+.app-container {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  max-width: 1440px;
+  margin: 0 auto;
+  padding: 1.5rem;
+}
+
+/* Header */
+.app-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-bottom: 1.5rem;
+  border-bottom: 1px solid var(--border-color);
+  margin-bottom: 1.5rem;
+}
+
+.logo {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  font-size: 1.5rem;
+  font-weight: 800;
+  letter-spacing: -0.025em;
+  font-family: var(--font-alt);
+}
+
+.logo-icon {
+  color: var(--accent-cyan);
+  width: 28px;
+  height: 28px;
+  filter: drop-shadow(0 0 8px rgba(0, 242, 254, 0.4));
+}
+
+.accent-text {
+  background: linear-gradient(135deg, var(--accent-cyan), var(--accent-blue));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.status-indicator {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: rgba(255, 255, 255, 0.04);
+  padding: 0.5rem 0.85rem;
+  border-radius: 9999px;
+  border: 1px solid var(--border-color);
+  font-size: 0.85rem;
+  font-weight: 500;
+}
+
+.status-dot {
+  width: 8px;
+  height: 8px;
+  background-color: var(--accent-yellow);
+  border-radius: 50%;
+  box-shadow: 0 0 8px var(--accent-yellow);
+}
+
+.status-indicator.live .status-dot {
+  background-color: var(--accent-green);
+  box-shadow: 0 0 8px var(--accent-green);
+}
+
+.status-indicator.live {
+  color: var(--accent-green);
+}
+
+/* Main Grid Layout */
+.app-grid {
+  display: grid;
+  grid-template-columns: 350px 1fr;
+  gap: 1.5rem;
+  align-items: start;
+}
+
+@media (max-width: 968px) {
+  .app-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Common Panels */
+.panel-card {
+  background: var(--bg-card);
+  backdrop-filter: blur(16px);
+  border: 1px solid var(--border-color);
+  border-radius: 16px;
+  padding: 1.5rem;
+  box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.3);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.panel-header {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 1.25rem;
+  padding-bottom: 0.75rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.panel-header h2 {
+  font-size: 1.15rem;
+  font-weight: 600;
+  font-family: var(--font-alt);
+  letter-spacing: -0.01em;
+}
+
+.header-icon {
+  width: 20px;
+  height: 20px;
+}
+
+.cyan-icon { color: var(--accent-cyan); }
+.blue-icon { color: var(--accent-blue); }
+
+/* Form Controls */
+.planner-form {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.form-group label {
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: var(--text-muted);
+}
+
+.input-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.input-wrapper input {
+  width: 100%;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid var(--border-color);
+  border-radius: 10px;
+  padding: 0.75rem 1rem 0.75rem 2.5rem;
+  color: var(--text-main);
+  font-family: var(--font-main);
+  font-size: 0.95rem;
+  outline: none;
+  transition: all 0.2s ease;
+}
+
+.input-wrapper input:focus {
+  border-color: var(--accent-blue);
+  background: rgba(59, 130, 246, 0.03);
+  box-shadow: 0 0 10px rgba(59, 130, 246, 0.15);
+}
+
+.input-icon {
+  position: absolute;
+  left: 0.85rem;
+  width: 16px;
+  height: 16px;
+  color: var(--text-muted);
+  pointer-events: none;
+}
+
+/* Interest Tags Selector */
+.interests-tags {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 0.5rem;
+  max-height: 180px;
+  overflow-y: auto;
+  padding-right: 0.25rem;
+}
+
+.tag-checkbox {
+  position: relative;
+}
+
+.tag-checkbox input {
+  position: absolute;
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.tag-checkbox label {
+  display: block;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid var(--border-color);
+  padding: 0.5rem 0.75rem;
+  border-radius: 8px;
+  font-size: 0.85rem;
+  cursor: pointer;
+  user-select: none;
+  transition: all 0.2s ease;
+}
+
+.tag-checkbox input:checked + label {
+  background: rgba(0, 242, 254, 0.08);
+  border-color: rgba(0, 242, 254, 0.4);
+  color: var(--text-main);
+  box-shadow: 0 0 8px rgba(0, 242, 254, 0.05);
+}
+
+.tag-checkbox label:hover {
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.custom-interest-wrapper {
+  display: flex;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+}
+
+.custom-interest-wrapper input {
+  flex: 1;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  padding: 0.5rem 0.75rem;
+  color: var(--text-main);
+  font-size: 0.85rem;
+  outline: none;
+}
+
+/* Buttons */
+.primary-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  background: linear-gradient(135deg, var(--accent-cyan), var(--accent-blue));
+  border: none;
+  border-radius: 10px;
+  padding: 0.85rem 1.5rem;
+  color: #05050a;
+  font-weight: 600;
+  font-size: 0.95rem;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 4px 15px rgba(0, 242, 254, 0.2);
+}
+
+.primary-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 20px rgba(0, 242, 254, 0.35);
+  filter: brightness(1.05);
+}
+
+.primary-btn:active {
+  transform: translateY(1px);
+}
+
+.primary-btn:disabled {
+  background: var(--bg-card);
+  color: var(--text-muted);
+  cursor: not-allowed;
+  box-shadow: none;
+  border: 1px solid var(--border-color);
+}
+
+.secondary-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  padding: 0.5rem;
+  color: var(--text-main);
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.secondary-btn:hover {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+/* Dashboard Panel Right */
+.dashboard-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+/* Workflow Visualization Card */
+.workflow-card {
+  padding: 1.25rem 1.5rem;
+}
+
+.workflow-container {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+/* Horizontal node graph */
+.graph-nodes {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  position: relative;
+  background: rgba(0, 0, 0, 0.15);
+  padding: 1.25rem;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.03);
+  overflow-x: auto;
+}
+
+.graph-node {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+  z-index: 2;
+  min-width: 90px;
+}
+
+.node-icon-wrapper {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.04);
+  border: 2px solid var(--border-color);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-muted);
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.node-icon-wrapper i {
+  width: 18px;
+  height: 18px;
+}
+
+.node-info {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.node-title {
+  font-size: 0.8rem;
+  font-weight: 600;
+  text-align: center;
+}
+
+.node-status {
+  font-size: 0.7rem;
+  color: var(--text-muted);
+  margin-top: 0.1rem;
+}
+
+.graph-arrow {
+  flex-grow: 1;
+  height: 2px;
+  background: var(--border-color);
+  position: relative;
+  min-width: 20px;
+  max-width: 60px;
+  margin: 0 0.5rem;
+  transition: all 0.4s ease;
+}
+
+.graph-arrow::after {
+  content: '';
+  position: absolute;
+  right: -2px;
+  top: -3px;
+  width: 0;
+  height: 0;
+  border-top: 4px solid transparent;
+  border-bottom: 4px solid transparent;
+  border-left: 6px solid var(--border-color);
+  transition: all 0.4s ease;
+}
+
+/* Active and Complete Node States */
+.graph-node.active .node-icon-wrapper {
+  transform: scale(1.1);
+  box-shadow: 0 0 15px currentColor;
+  animation: pulse-node 1.8s infinite alternate;
+}
+
+.graph-node.active .node-status {
+  color: var(--text-main);
+  font-weight: 500;
+}
+
+.graph-node.completed .node-icon-wrapper {
+  background: rgba(16, 185, 129, 0.15);
+  border-color: var(--accent-green);
+  color: var(--accent-green);
+  box-shadow: 0 0 10px rgba(16, 185, 129, 0.2);
+}
+
+.graph-arrow.active {
+  background: var(--accent-blue);
+  box-shadow: 0 0 8px rgba(59, 130, 246, 0.5);
+}
+
+.graph-arrow.active::after {
+  border-left-color: var(--accent-blue);
+}
+
+/* Node Custom Accent Colors */
+#node-start .node-icon-wrapper {
+  color: var(--text-muted);
+}
+#node-start.completed .node-icon-wrapper {
+  color: var(--accent-blue);
+  border-color: var(--accent-blue);
+  background: rgba(59, 130, 246, 0.1);
+}
+
+#node-researcher.active { color: var(--accent-purple); }
+#node-budget.active { color: var(--accent-yellow); }
+#node-planner.active { color: var(--accent-green); }
+#node-end.completed .node-icon-wrapper {
+  color: var(--accent-green);
+  border-color: var(--accent-green);
+  background: rgba(16, 185, 129, 0.1);
+}
+
+@keyframes pulse-node {
+  0% { transform: scale(1.05); filter: brightness(1); }
+  100% { transform: scale(1.15); filter: brightness(1.2); }
+}
+
+/* Banner */
+.execution-banner {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  padding: 0.75rem 1rem;
+  font-size: 0.85rem;
+  color: var(--text-muted);
+}
+
+.banner-icon {
+  width: 16px;
+  height: 16px;
+  color: var(--accent-blue);
+}
+
+.execution-banner.running .banner-icon {
+  animation: rotate-spinner 2s infinite linear;
+  color: var(--accent-cyan);
+}
+
+@keyframes rotate-spinner {
+  to { transform: rotate(360deg); }
+}
+
+/* Output card panels & tabs */
+.output-panel-card {
+  display: flex;
+  flex-direction: column;
+  min-height: 480px;
+  padding: 0;
+}
+
+.output-tabs {
+  display: flex;
+  border-bottom: 1px solid var(--border-color);
+  background: rgba(0, 0, 0, 0.15);
+  border-top-left-radius: 15px;
+  border-top-right-radius: 15px;
+  overflow: hidden;
+}
+
+.tab-btn {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  background: none;
+  border: none;
+  border-bottom: 2px solid transparent;
+  padding: 1rem;
+  color: var(--text-muted);
+  font-family: var(--font-main);
+  font-weight: 550;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.tab-btn i {
+  width: 16px;
+  height: 16px;
+}
+
+.tab-btn:hover {
+  background: rgba(255, 255, 255, 0.02);
+  color: var(--text-main);
+}
+
+.tab-btn.active {
+  color: var(--accent-cyan);
+  border-bottom-color: var(--accent-cyan);
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.tab-contents {
+  flex-grow: 1;
+  padding: 1.5rem;
+  overflow-y: auto;
+  max-height: 550px;
+}
+
+.tab-content {
+  display: none;
+  height: 100%;
+}
+
+.tab-content.active {
+  display: block;
+  animation: fade-in 0.25s ease-out;
+}
+
+@keyframes fade-in {
+  from { opacity: 0; transform: translateY(4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* Placeholder */
+.placeholder-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  min-height: 300px;
+  color: var(--text-muted);
+  text-align: center;
+  gap: 1rem;
+}
+
+.placeholder-icon {
+  width: 48px;
+  height: 48px;
+  stroke-width: 1;
+  opacity: 0.4;
+}
+
+/* Markdown styling */
+.rendered-markdown {
+  color: var(--text-main);
+}
+
+.rendered-markdown h1 {
+  font-size: 1.5rem;
+  margin-bottom: 1rem;
+  font-family: var(--font-alt);
+  color: #fff;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  padding-bottom: 0.5rem;
+}
+
+.rendered-markdown h2 {
+  font-size: 1.25rem;
+  margin-top: 1.5rem;
+  margin-bottom: 0.75rem;
+  font-family: var(--font-alt);
+  color: var(--accent-cyan);
+}
+
+.rendered-markdown h3 {
+  font-size: 1.1rem;
+  margin-top: 1.25rem;
+  margin-bottom: 0.5rem;
+  color: var(--accent-blue);
+}
+
+.rendered-markdown h4 {
+  font-size: 1rem;
+  margin-top: 1rem;
+  margin-bottom: 0.5rem;
+  color: var(--text-main);
+  background: rgba(255, 255, 255, 0.03);
+  padding: 0.35rem 0.65rem;
+  border-radius: 6px;
+  border-left: 3px solid var(--accent-cyan);
+  display: inline-block;
+  width: 100%;
+}
+
+.rendered-markdown p {
+  margin-bottom: 0.85rem;
+  font-size: 0.95rem;
+  color: #d1d5db;
+}
+
+.rendered-markdown ul, .rendered-markdown ol {
+  margin-left: 1.25rem;
+  margin-bottom: 1rem;
+}
+
+.rendered-markdown li {
+  margin-bottom: 0.4rem;
+  font-size: 0.95rem;
+  color: #d1d5db;
+}
+
+.rendered-markdown strong {
+  color: #fff;
+}
+
+/* Table Design */
+.rendered-markdown table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 1.25rem 0;
+  font-size: 0.9rem;
+}
+
+.rendered-markdown th, .rendered-markdown td {
+  padding: 0.65rem 0.85rem;
+  text-align: left;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.rendered-markdown th {
+  background-color: rgba(255, 255, 255, 0.02);
+  color: #fff;
+  font-weight: 600;
+}
+
+.rendered-markdown tr:hover td {
+  background-color: rgba(255, 255, 255, 0.01);
+}
+
+/* Code & checklist */
+.rendered-markdown code {
+  font-family: monospace;
+  background-color: rgba(255, 255, 255, 0.08);
+  padding: 0.15rem 0.35rem;
+  border-radius: 4px;
+  font-size: 0.85rem;
+}
+
+.rendered-markdown input[type="checkbox"] {
+  margin-right: 0.5rem;
+  pointer-events: none;
+  accent-color: var(--accent-green);
+}
+
+.form-row {
+  display: flex;
+  gap: 0.75rem;
+}
+.flex-1 {
+  flex: 1;
+}
+.select-wrapper {
+  position: relative;
+}
+.select-wrapper select {
+  width: 100%;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid var(--border-color);
+  border-radius: 10px;
+  padding: 0.75rem 1rem;
+  color: var(--text-main);
+  font-family: var(--font-main);
+  font-size: 0.95rem;
+  outline: none;
+  cursor: pointer;
+  appearance: none;
+  -webkit-appearance: none;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='%239ca3af' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><polyline points='6 9 12 15 18 9'></polyline></svg>");
+  background-repeat: no-repeat;
+  background-position: right 0.75rem center;
+  background-size: 16px;
+  padding-right: 2.25rem;
+  transition: all 0.2s ease;
+}
+.select-wrapper select:focus {
+  border-color: var(--accent-blue);
+  background-color: rgba(59, 130, 246, 0.03);
+}
+.select-wrapper select option {
+  background-color: #0f121d;
+  color: var(--text-main);
+}
+
+.form-row {
+  display: flex;
+  gap: 0.75rem;
+}
+.flex-1 {
+  flex: 1;
+}
+.select-wrapper {
+  position: relative;
+}
+.select-wrapper select {
+  width: 100%;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid var(--border-color);
+  border-radius: 10px;
+  padding: 0.75rem 1rem;
+  color: var(--text-main);
+  font-family: var(--font-main);
+  font-size: 0.95rem;
+  outline: none;
+  cursor: pointer;
+  appearance: none;
+  -webkit-appearance: none;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='%239ca3af' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><polyline points='6 9 12 15 18 9'></polyline></svg>");
+  background-repeat: no-repeat;
+  background-position: right 0.75rem center;
+  background-size: 16px;
+  padding-right: 2.25rem;
+  transition: all 0.2s ease;
+}
+.select-wrapper select:focus {
+  border-color: var(--accent-blue);
+  background-color: rgba(59, 130, 246, 0.03);
+}
+.select-wrapper select option {
+  background-color: #0f121d;
+  color: var(--text-main);
+}
+
+.form-row {
+  display: flex;
+  gap: 0.75rem;
+}
+.flex-1 {
+  flex: 1;
+}
+.select-wrapper {
+  position: relative;
+}
+.select-wrapper select {
+  width: 100%;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid var(--border-color);
+  border-radius: 10px;
+  padding: 0.75rem 1rem;
+  color: var(--text-main);
+  font-family: var(--font-main);
+  font-size: 0.95rem;
+  outline: none;
+  cursor: pointer;
+  appearance: none;
+  -webkit-appearance: none;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='%239ca3af' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><polyline points='6 9 12 15 18 9'></polyline></svg>");
+  background-repeat: no-repeat;
+  background-position: right 0.75rem center;
+  background-size: 16px;
+  padding-right: 2.25rem;
+  transition: all 0.2s ease;
+}
+.select-wrapper select:focus {
+  border-color: var(--accent-blue);
+  background-color: rgba(59, 130, 246, 0.03);
+}
+.select-wrapper select option {
+  background-color: #0f121d;
+  color: var(--text-main);
+}
+
+.form-row {
+  display: flex;
+  gap: 0.75rem;
+}
+.flex-1 {
+  flex: 1;
+}
+.select-wrapper {
+  position: relative;
+}
+.select-wrapper select {
+  width: 100%;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid var(--border-color);
+  border-radius: 10px;
+  padding: 0.75rem 1rem;
+  color: var(--text-main);
+  font-family: var(--font-main);
+  font-size: 0.95rem;
+  outline: none;
+  cursor: pointer;
+  appearance: none;
+  -webkit-appearance: none;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='%239ca3af' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><polyline points='6 9 12 15 18 9'></polyline></svg>");
+  background-repeat: no-repeat;
+  background-position: right 0.75rem center;
+  background-size: 16px;
+  padding-right: 2.25rem;
+  transition: all 0.2s ease;
+}
+.select-wrapper select:focus {
+  border-color: var(--accent-blue);
+  background-color: rgba(59, 130, 246, 0.03);
+}
+.select-wrapper select option {
+  background-color: #0f121d;
+  color: var(--text-main);
+}
+
+.form-row {
+  display: flex;
+  gap: 0.75rem;
+}
+.flex-1 {
+  flex: 1;
+}
+.select-wrapper {
+  position: relative;
+}
+.select-wrapper select {
+  width: 100%;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid var(--border-color);
+  border-radius: 10px;
+  padding: 0.75rem 1rem;
+  color: var(--text-main);
+  font-family: var(--font-main);
+  font-size: 0.95rem;
+  outline: none;
+  cursor: pointer;
+  appearance: none;
+  -webkit-appearance: none;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='%239ca3af' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><polyline points='6 9 12 15 18 9'></polyline></svg>");
+  background-repeat: no-repeat;
+  background-position: right 0.75rem center;
+  background-size: 16px;
+  padding-right: 2.25rem;
+  transition: all 0.2s ease;
+}
+.select-wrapper select:focus {
+  border-color: var(--accent-blue);
+  background-color: rgba(59, 130, 246, 0.03);
+}
+.select-wrapper select option {
+  background-color: #0f121d;
+  color: var(--text-main);
+}
+
+.form-row {
+  display: flex;
+  gap: 0.75rem;
+}
+.flex-1 {
+  flex: 1;
+}
+.select-wrapper {
+  position: relative;
+}
+.select-wrapper select {
+  width: 100%;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid var(--border-color);
+  border-radius: 10px;
+  padding: 0.75rem 1rem;
+  color: var(--text-main);
+  font-family: var(--font-main);
+  font-size: 0.95rem;
+  outline: none;
+  cursor: pointer;
+  appearance: none;
+  -webkit-appearance: none;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='%239ca3af' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><polyline points='6 9 12 15 18 9'></polyline></svg>");
+  background-repeat: no-repeat;
+  background-position: right 0.75rem center;
+  background-size: 16px;
+  padding-right: 2.25rem;
+  transition: all 0.2s ease;
+}
+.select-wrapper select:focus {
+  border-color: var(--accent-blue);
+  background-color: rgba(59, 130, 246, 0.03);
+}
+.select-wrapper select option {
+  background-color: #0f121d;
+  color: var(--text-main);
+}
+
+.form-row {
+  display: flex;
+  gap: 0.75rem;
+}
+.flex-1 {
+  flex: 1;
+}
+.select-wrapper {
+  position: relative;
+}
+.select-wrapper select {
+  width: 100%;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid var(--border-color);
+  border-radius: 10px;
+  padding: 0.75rem 1rem;
+  color: var(--text-main);
+  font-family: var(--font-main);
+  font-size: 0.95rem;
+  outline: none;
+  cursor: pointer;
+  appearance: none;
+  -webkit-appearance: none;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='%239ca3af' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><polyline points='6 9 12 15 18 9'></polyline></svg>");
+  background-repeat: no-repeat;
+  background-position: right 0.75rem center;
+  background-size: 16px;
+  padding-right: 2.25rem;
+  transition: all 0.2s ease;
+}
+.select-wrapper select:focus {
+  border-color: var(--accent-blue);
+  background-color: rgba(59, 130, 246, 0.03);
+}
+.select-wrapper select option {
+  background-color: #0f121d;
+  color: var(--text-main);
+}
+
+.form-row {
+  display: flex;
+  gap: 0.75rem;
+}
+.flex-1 {
+  flex: 1;
+}
+.select-wrapper {
+  position: relative;
+}
+.select-wrapper select {
+  width: 100%;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid var(--border-color);
+  border-radius: 10px;
+  padding: 0.75rem 1rem;
+  color: var(--text-main);
+  font-family: var(--font-main);
+  font-size: 0.95rem;
+  outline: none;
+  cursor: pointer;
+  appearance: none;
+  -webkit-appearance: none;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='%239ca3af' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><polyline points='6 9 12 15 18 9'></polyline></svg>");
+  background-repeat: no-repeat;
+  background-position: right 0.75rem center;
+  background-size: 16px;
+  padding-right: 2.25rem;
+  transition: all 0.2s ease;
+}
+.select-wrapper select:focus {
+  border-color: var(--accent-blue);
+  background-color: rgba(59, 130, 246, 0.03);
+}
+.select-wrapper select option {
+  background-color: #0f121d;
+  color: var(--text-main);
+}
+
+.map-card {
+  margin-bottom: 1.5rem;
+}
+.green-icon {
+  color: var(--success) !important;
+}
+.leaflet-container {
+  background: #111b27 !important;
+  font-family: var(--font-main) !important;
+}
+.leaflet-bar a {
+  background-color: #172237 !important;
+  color: var(--text-main) !important;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08) !important;
+}
+.leaflet-bar a:hover {
+  background-color: #1e2d4a !important;
+}
+.leaflet-popup-content-wrapper, .leaflet-popup-tip {
+  background: #172237 !important;
+  color: var(--text-main) !important;
+  border: 1px solid rgba(255, 255, 255, 0.08) !important;
+}
+
+.form-row {
+  display: flex;
+  gap: 0.75rem;
+}
+.flex-1 {
+  flex: 1;
+}
+.select-wrapper {
+  position: relative;
+}
+.select-wrapper select {
+  width: 100%;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid var(--border-color);
+  border-radius: 10px;
+  padding: 0.75rem 1rem;
+  color: var(--text-main);
+  font-family: var(--font-main);
+  font-size: 0.95rem;
+  outline: none;
+  cursor: pointer;
+  appearance: none;
+  -webkit-appearance: none;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='%239ca3af' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><polyline points='6 9 12 15 18 9'></polyline></svg>");
+  background-repeat: no-repeat;
+  background-position: right 0.75rem center;
+  background-size: 16px;
+  padding-right: 2.25rem;
+  transition: all 0.2s ease;
+}
+.select-wrapper select:focus {
+  border-color: var(--accent-blue);
+  background-color: rgba(59, 130, 246, 0.03);
+}
+.select-wrapper select option {
+  background-color: #0f121d;
+  color: var(--text-main);
+}
+
+.map-card {
+  margin-bottom: 1.5rem;
+}
+.green-icon {
+  color: var(--success) !important;
+}
+.leaflet-container {
+  background: #111b27 !important;
+  font-family: var(--font-main) !important;
+}
+.leaflet-bar a {
+  background-color: #172237 !important;
+  color: var(--text-main) !important;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08) !important;
+}
+.leaflet-bar a:hover {
+  background-color: #1e2d4a !important;
+}
+.leaflet-popup-content-wrapper, .leaflet-popup-tip {
+  background: #172237 !important;
+  color: var(--text-main) !important;
+  border: 1px solid rgba(255, 255, 255, 0.08) !important;
+}
+
+.form-row {
+  display: flex;
+  gap: 0.75rem;
+}
+.flex-1 {
+  flex: 1;
+}
+.select-wrapper {
+  position: relative;
+}
+.select-wrapper select {
+  width: 100%;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid var(--border-color);
+  border-radius: 10px;
+  padding: 0.75rem 1rem;
+  color: var(--text-main);
+  font-family: var(--font-main);
+  font-size: 0.95rem;
+  outline: none;
+  cursor: pointer;
+  appearance: none;
+  -webkit-appearance: none;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='%239ca3af' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><polyline points='6 9 12 15 18 9'></polyline></svg>");
+  background-repeat: no-repeat;
+  background-position: right 0.75rem center;
+  background-size: 16px;
+  padding-right: 2.25rem;
+  transition: all 0.2s ease;
+}
+.select-wrapper select:focus {
+  border-color: var(--accent-blue);
+  background-color: rgba(59, 130, 246, 0.03);
+}
+.select-wrapper select option {
+  background-color: #0f121d;
+  color: var(--text-main);
+}
+
+.map-card {
+  margin-bottom: 1.5rem;
+}
+.green-icon {
+  color: var(--success) !important;
+}
+.leaflet-container {
+  background: #111b27 !important;
+  font-family: var(--font-main) !important;
+}
+.leaflet-bar a {
+  background-color: #172237 !important;
+  color: var(--text-main) !important;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08) !important;
+}
+.leaflet-bar a:hover {
+  background-color: #1e2d4a !important;
+}
+.leaflet-popup-content-wrapper, .leaflet-popup-tip {
+  background: #172237 !important;
+  color: var(--text-main) !important;
+  border: 1px solid rgba(255, 255, 255, 0.08) !important;
+}
+
+.form-row {
+  display: flex;
+  gap: 0.75rem;
+}
+.flex-1 {
+  flex: 1;
+}
+.select-wrapper {
+  position: relative;
+}
+.select-wrapper select {
+  width: 100%;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid var(--border-color);
+  border-radius: 10px;
+  padding: 0.75rem 1rem;
+  color: var(--text-main);
+  font-family: var(--font-main);
+  font-size: 0.95rem;
+  outline: none;
+  cursor: pointer;
+  appearance: none;
+  -webkit-appearance: none;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='%239ca3af' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><polyline points='6 9 12 15 18 9'></polyline></svg>");
+  background-repeat: no-repeat;
+  background-position: right 0.75rem center;
+  background-size: 16px;
+  padding-right: 2.25rem;
+  transition: all 0.2s ease;
+}
+.select-wrapper select:focus {
+  border-color: var(--accent-blue);
+  background-color: rgba(59, 130, 246, 0.03);
+}
+.select-wrapper select option {
+  background-color: #0f121d;
+  color: var(--text-main);
+}
+
+.map-card {
+  margin-bottom: 1.5rem;
+}
+.green-icon {
+  color: var(--success) !important;
+}
+.leaflet-container {
+  background: #111b27 !important;
+  font-family: var(--font-main) !important;
+}
+.leaflet-bar a {
+  background-color: #172237 !important;
+  color: var(--text-main) !important;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08) !important;
+}
+.leaflet-bar a:hover {
+  background-color: #1e2d4a !important;
+}
+.leaflet-popup-content-wrapper, .leaflet-popup-tip {
+  background: #172237 !important;
+  color: var(--text-main) !important;
+  border: 1px solid rgba(255, 255, 255, 0.08) !important;
+}
+
+.form-row {
+  display: flex;
+  gap: 0.75rem;
+}
+.flex-1 {
+  flex: 1;
+}
+.select-wrapper {
+  position: relative;
+}
+.select-wrapper select {
+  width: 100%;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid var(--border-color);
+  border-radius: 10px;
+  padding: 0.75rem 1rem;
+  color: var(--text-main);
+  font-family: var(--font-main);
+  font-size: 0.95rem;
+  outline: none;
+  cursor: pointer;
+  appearance: none;
+  -webkit-appearance: none;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='%239ca3af' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><polyline points='6 9 12 15 18 9'></polyline></svg>");
+  background-repeat: no-repeat;
+  background-position: right 0.75rem center;
+  background-size: 16px;
+  padding-right: 2.25rem;
+  transition: all 0.2s ease;
+}
+.select-wrapper select:focus {
+  border-color: var(--accent-blue);
+  background-color: rgba(59, 130, 246, 0.03);
+}
+.select-wrapper select option {
+  background-color: #0f121d;
+  color: var(--text-main);
+}
+
+.map-card {
+  margin-bottom: 1.5rem;
+}
+.green-icon {
+  color: var(--success) !important;
+}
+.leaflet-container {
+  background: #111b27 !important;
+  font-family: var(--font-main) !important;
+}
+.leaflet-bar a {
+  background-color: #172237 !important;
+  color: var(--text-main) !important;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08) !important;
+}
+.leaflet-bar a:hover {
+  background-color: #1e2d4a !important;
+}
+.leaflet-popup-content-wrapper, .leaflet-popup-tip {
+  background: #172237 !important;
+  color: var(--text-main) !important;
+  border: 1px solid rgba(255, 255, 255, 0.08) !important;
+}
+
+.form-row {
+  display: flex;
+  gap: 0.75rem;
+}
+.flex-1 {
+  flex: 1;
+}
+.select-wrapper {
+  position: relative;
+}
+.select-wrapper select {
+  width: 100%;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid var(--border-color);
+  border-radius: 10px;
+  padding: 0.75rem 1rem;
+  color: var(--text-main);
+  font-family: var(--font-main);
+  font-size: 0.95rem;
+  outline: none;
+  cursor: pointer;
+  appearance: none;
+  -webkit-appearance: none;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='%239ca3af' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><polyline points='6 9 12 15 18 9'></polyline></svg>");
+  background-repeat: no-repeat;
+  background-position: right 0.75rem center;
+  background-size: 16px;
+  padding-right: 2.25rem;
+  transition: all 0.2s ease;
+}
+.select-wrapper select:focus {
+  border-color: var(--accent-blue);
+  background-color: rgba(59, 130, 246, 0.03);
+}
+.select-wrapper select option {
+  background-color: #0f121d;
+  color: var(--text-main);
+}
+
+.map-card {
+  margin-bottom: 1.5rem;
+}
+.green-icon {
+  color: var(--success) !important;
+}
+.leaflet-container {
+  background: #111b27 !important;
+  font-family: var(--font-main) !important;
+}
+.leaflet-bar a {
+  background-color: #172237 !important;
+  color: var(--text-main) !important;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08) !important;
+}
+.leaflet-bar a:hover {
+  background-color: #1e2d4a !important;
+}
+.leaflet-popup-content-wrapper, .leaflet-popup-tip {
+  background: #172237 !important;
+  color: var(--text-main) !important;
+  border: 1px solid rgba(255, 255, 255, 0.08) !important;
+}
+
+.form-row {
+  display: flex;
+  gap: 0.75rem;
+}
+.flex-1 {
+  flex: 1;
+}
+.select-wrapper {
+  position: relative;
+}
+.select-wrapper select {
+  width: 100%;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid var(--border-color);
+  border-radius: 10px;
+  padding: 0.75rem 1rem;
+  color: var(--text-main);
+  font-family: var(--font-main);
+  font-size: 0.95rem;
+  outline: none;
+  cursor: pointer;
+  appearance: none;
+  -webkit-appearance: none;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='%239ca3af' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><polyline points='6 9 12 15 18 9'></polyline></svg>");
+  background-repeat: no-repeat;
+  background-position: right 0.75rem center;
+  background-size: 16px;
+  padding-right: 2.25rem;
+  transition: all 0.2s ease;
+}
+.select-wrapper select:focus {
+  border-color: var(--accent-blue);
+  background-color: rgba(59, 130, 246, 0.03);
+}
+.select-wrapper select option {
+  background-color: #0f121d;
+  color: var(--text-main);
+}
+
+.map-card {
+  margin-bottom: 1.5rem;
+}
+.green-icon {
+  color: var(--success) !important;
+}
+.leaflet-container {
+  background: #111b27 !important;
+  font-family: var(--font-main) !important;
+}
+.leaflet-bar a {
+  background-color: #172237 !important;
+  color: var(--text-main) !important;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08) !important;
+}
+.leaflet-bar a:hover {
+  background-color: #1e2d4a !important;
+}
+.leaflet-popup-content-wrapper, .leaflet-popup-tip {
+  background: #172237 !important;
+  color: var(--text-main) !important;
+  border: 1px solid rgba(255, 255, 255, 0.08) !important;
+}
+
+.form-row {
+  display: flex;
+  gap: 0.75rem;
+}
+.flex-1 {
+  flex: 1;
+}
+.select-wrapper {
+  position: relative;
+}
+.select-wrapper select {
+  width: 100%;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid var(--border-color);
+  border-radius: 10px;
+  padding: 0.75rem 1rem;
+  color: var(--text-main);
+  font-family: var(--font-main);
+  font-size: 0.95rem;
+  outline: none;
+  cursor: pointer;
+  appearance: none;
+  -webkit-appearance: none;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='%239ca3af' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><polyline points='6 9 12 15 18 9'></polyline></svg>");
+  background-repeat: no-repeat;
+  background-position: right 0.75rem center;
+  background-size: 16px;
+  padding-right: 2.25rem;
+  transition: all 0.2s ease;
+}
+.select-wrapper select:focus {
+  border-color: var(--accent-blue);
+  background-color: rgba(59, 130, 246, 0.03);
+}
+.select-wrapper select option {
+  background-color: #0f121d;
+  color: var(--text-main);
+}
+
+.map-card {
+  margin-bottom: 1.5rem;
+}
+.green-icon {
+  color: var(--success) !important;
+}
+.leaflet-container {
+  background: #111b27 !important;
+  font-family: var(--font-main) !important;
+}
+.leaflet-bar a {
+  background-color: #172237 !important;
+  color: var(--text-main) !important;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08) !important;
+}
+.leaflet-bar a:hover {
+  background-color: #1e2d4a !important;
+}
+.leaflet-popup-content-wrapper, .leaflet-popup-tip {
+  background: #172237 !important;
+  color: var(--text-main) !important;
+  border: 1px solid rgba(255, 255, 255, 0.08) !important;
+}
+
+.form-row {
+  display: flex;
+  gap: 0.75rem;
+}
+.flex-1 {
+  flex: 1;
+}
+.select-wrapper {
+  position: relative;
+}
+.select-wrapper select {
+  width: 100%;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid var(--border-color);
+  border-radius: 10px;
+  padding: 0.75rem 1rem;
+  color: var(--text-main);
+  font-family: var(--font-main);
+  font-size: 0.95rem;
+  outline: none;
+  cursor: pointer;
+  appearance: none;
+  -webkit-appearance: none;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='%239ca3af' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><polyline points='6 9 12 15 18 9'></polyline></svg>");
+  background-repeat: no-repeat;
+  background-position: right 0.75rem center;
+  background-size: 16px;
+  padding-right: 2.25rem;
+  transition: all 0.2s ease;
+}
+.select-wrapper select:focus {
+  border-color: var(--accent-blue);
+  background-color: rgba(59, 130, 246, 0.03);
+}
+.select-wrapper select option {
+  background-color: #0f121d;
+  color: var(--text-main);
+}
+
+.map-card {
+  margin-bottom: 1.5rem;
+}
+.green-icon {
+  color: var(--success) !important;
+}
+.leaflet-container {
+  background: #111b27 !important;
+  font-family: var(--font-main) !important;
+}
+.leaflet-bar a {
+  background-color: #172237 !important;
+  color: var(--text-main) !important;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08) !important;
+}
+.leaflet-bar a:hover {
+  background-color: #1e2d4a !important;
+}
+.leaflet-popup-content-wrapper, .leaflet-popup-tip {
+  background: #172237 !important;
+  color: var(--text-main) !important;
+  border: 1px solid rgba(255, 255, 255, 0.08) !important;
+}
+
+.form-row {
+  display: flex;
+  gap: 0.75rem;
+}
+.flex-1 {
+  flex: 1;
+}
+.select-wrapper {
+  position: relative;
+}
+.select-wrapper select {
+  width: 100%;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid var(--border-color);
+  border-radius: 10px;
+  padding: 0.75rem 1rem;
+  color: var(--text-main);
+  font-family: var(--font-main);
+  font-size: 0.95rem;
+  outline: none;
+  cursor: pointer;
+  appearance: none;
+  -webkit-appearance: none;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='%239ca3af' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><polyline points='6 9 12 15 18 9'></polyline></svg>");
+  background-repeat: no-repeat;
+  background-position: right 0.75rem center;
+  background-size: 16px;
+  padding-right: 2.25rem;
+  transition: all 0.2s ease;
+}
+.select-wrapper select:focus {
+  border-color: var(--accent-blue);
+  background-color: rgba(59, 130, 246, 0.03);
+}
+.select-wrapper select option {
+  background-color: #0f121d;
+  color: var(--text-main);
+}
+
+.map-card {
+  margin-bottom: 1.5rem;
+}
+.green-icon {
+  color: var(--success) !important;
+}
+.leaflet-container {
+  background: #111b27 !important;
+  font-family: var(--font-main) !important;
+}
+.leaflet-bar a {
+  background-color: #172237 !important;
+  color: var(--text-main) !important;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08) !important;
+}
+.leaflet-bar a:hover {
+  background-color: #1e2d4a !important;
+}
+.leaflet-popup-content-wrapper, .leaflet-popup-tip {
+  background: #172237 !important;
+  color: var(--text-main) !important;
+  border: 1px solid rgba(255, 255, 255, 0.08) !important;
+}
+
+.form-row {
+  display: flex;
+  gap: 0.75rem;
+}
+.flex-1 {
+  flex: 1;
+}
+.select-wrapper {
+  position: relative;
+}
+.select-wrapper select {
+  width: 100%;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid var(--border-color);
+  border-radius: 10px;
+  padding: 0.75rem 1rem;
+  color: var(--text-main);
+  font-family: var(--font-main);
+  font-size: 0.95rem;
+  outline: none;
+  cursor: pointer;
+  appearance: none;
+  -webkit-appearance: none;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='%239ca3af' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><polyline points='6 9 12 15 18 9'></polyline></svg>");
+  background-repeat: no-repeat;
+  background-position: right 0.75rem center;
+  background-size: 16px;
+  padding-right: 2.25rem;
+  transition: all 0.2s ease;
+}
+.select-wrapper select:focus {
+  border-color: var(--accent-blue);
+  background-color: rgba(59, 130, 246, 0.03);
+}
+.select-wrapper select option {
+  background-color: #0f121d;
+  color: var(--text-main);
+}
+
+.map-card {
+  margin-bottom: 1.5rem;
+}
+.green-icon {
+  color: var(--success) !important;
+}
+.leaflet-container {
+  background: #111b27 !important;
+  font-family: var(--font-main) !important;
+}
+.leaflet-bar a {
+  background-color: #172237 !important;
+  color: var(--text-main) !important;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08) !important;
+}
+.leaflet-bar a:hover {
+  background-color: #1e2d4a !important;
+}
+.leaflet-popup-content-wrapper, .leaflet-popup-tip {
+  background: #172237 !important;
+  color: var(--text-main) !important;
+  border: 1px solid rgba(255, 255, 255, 0.08) !important;
+}
+
+.form-row {
+  display: flex;
+  gap: 0.75rem;
+}
+.flex-1 {
+  flex: 1;
+}
+.select-wrapper {
+  position: relative;
+}
+.select-wrapper select {
+  width: 100%;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid var(--border-color);
+  border-radius: 10px;
+  padding: 0.75rem 1rem;
+  color: var(--text-main);
+  font-family: var(--font-main);
+  font-size: 0.95rem;
+  outline: none;
+  cursor: pointer;
+  appearance: none;
+  -webkit-appearance: none;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='%239ca3af' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><polyline points='6 9 12 15 18 9'></polyline></svg>");
+  background-repeat: no-repeat;
+  background-position: right 0.75rem center;
+  background-size: 16px;
+  padding-right: 2.25rem;
+  transition: all 0.2s ease;
+}
+.select-wrapper select:focus {
+  border-color: var(--accent-blue);
+  background-color: rgba(59, 130, 246, 0.03);
+}
+.select-wrapper select option {
+  background-color: #0f121d;
+  color: var(--text-main);
+}
+
+.map-card {
+  margin-bottom: 1.5rem;
+}
+.green-icon {
+  color: var(--success) !important;
+}
+.leaflet-container {
+  background: #111b27 !important;
+  font-family: var(--font-main) !important;
+}
+.leaflet-bar a {
+  background-color: #172237 !important;
+  color: var(--text-main) !important;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08) !important;
+}
+.leaflet-bar a:hover {
+  background-color: #1e2d4a !important;
+}
+.leaflet-popup-content-wrapper, .leaflet-popup-tip {
+  background: #172237 !important;
+  color: var(--text-main) !important;
+  border: 1px solid rgba(255, 255, 255, 0.08) !important;
+}
+
+.form-row {
+  display: flex;
+  gap: 0.75rem;
+}
+.flex-1 {
+  flex: 1;
+}
+.select-wrapper {
+  position: relative;
+}
+.select-wrapper select {
+  width: 100%;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid var(--border-color);
+  border-radius: 10px;
+  padding: 0.75rem 1rem;
+  color: var(--text-main);
+  font-family: var(--font-main);
+  font-size: 0.95rem;
+  outline: none;
+  cursor: pointer;
+  appearance: none;
+  -webkit-appearance: none;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='%239ca3af' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><polyline points='6 9 12 15 18 9'></polyline></svg>");
+  background-repeat: no-repeat;
+  background-position: right 0.75rem center;
+  background-size: 16px;
+  padding-right: 2.25rem;
+  transition: all 0.2s ease;
+}
+.select-wrapper select:focus {
+  border-color: var(--accent-blue);
+  background-color: rgba(59, 130, 246, 0.03);
+}
+.select-wrapper select option {
+  background-color: #0f121d;
+  color: var(--text-main);
+}
+
+.map-card {
+  margin-bottom: 1.5rem;
+}
+.green-icon {
+  color: var(--success) !important;
+}
+.leaflet-container {
+  background: #111b27 !important;
+  font-family: var(--font-main) !important;
+}
+.leaflet-bar a {
+  background-color: #172237 !important;
+  color: var(--text-main) !important;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08) !important;
+}
+.leaflet-bar a:hover {
+  background-color: #1e2d4a !important;
+}
+.leaflet-popup-content-wrapper, .leaflet-popup-tip {
+  background: #172237 !important;
+  color: var(--text-main) !important;
+  border: 1px solid rgba(255, 255, 255, 0.08) !important;
+}

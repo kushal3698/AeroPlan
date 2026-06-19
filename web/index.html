@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AeroPlan | AI Multi-Agent Travel Planner</title>
+  <!-- Global Browser Error Boundary -->
+  <script>
+    window.onerror = function(message, source, lineno, colno, error) {
+      const banner = document.getElementById('error-boundary-banner');
+      const msg = document.getElementById('error-boundary-msg');
+      if (banner && msg) {
+        banner.style.display = 'block';
+        msg.textContent = message + ' (' + (source ? source.split('/').pop() : 'unknown') + ':' + lineno + ')';
+      }
+      return false;
+    };
+  </script>
+  <!-- Leaflet Map Assets via jsdelivr -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.css" />
+  <script src="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.js"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <!-- Marked Markdown Parser -->
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <!-- Error Boundary Banner -->
+  <div id="error-boundary-banner" style="display: none; background: #ef4444; color: white; padding: 12px; font-family: monospace; z-index: 10000; position: fixed; top: 0; left: 0; right: 0; text-align: center; font-size: 14px; box-shadow: 0 4px 15px rgba(0,0,0,0.5); font-weight: bold;">
+    🚨 Browser Script Error: <span id="error-boundary-msg"></span>
+  </div>
+  <div class="app-container">
+    <!-- Header -->
+    <header class="app-header">
+      <div class="logo">
+        <i data-lucide="plane-takeoff" class="logo-icon"></i>
+        <span>AeroPlan <span class="accent-text">AI</span></span>
+      </div>
+      <div class="status-indicator" id="api-status">
+        <span class="status-dot"></span>
+        <span class="status-label">Simulation Mode</span>
+      </div>
+    </header>
+
+    <!-- Main Content Grid -->
+    <main class="app-grid">
+      <!-- Left Column: Input Panel -->
+      <section class="panel-card input-panel">
+        <div class="panel-header">
+          <i data-lucide="sliders" class="header-icon cyan-icon"></i>
+          <h2>Trip Settings</h2>
+        </div>
+        
+        <form id="planner-form" class="planner-form">
+          <div class="form-group">
+            <label for="destination">Destination</label>
+            <div class="input-wrapper">
+              <i data-lucide="map-pin" class="input-icon"></i>
+              <input type="text" id="destination" placeholder="e.g. Kyoto, Japan" value="Kyoto, Japan" required>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label for="duration">Duration (Days)</label>
+            <div class="input-wrapper">
+              <i data-lucide="calendar" class="input-icon"></i>
+              <input type="number" id="duration" min="1" max="14" value="3" required>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label for="budget">Budget Limit</label>
+            <div class="input-wrapper">
+              <i data-lucide="banknote" class="input-icon"></i>
+              <input type="number" id="budget" min="100" max="10000000" value="1000" required>
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group flex-1">
+              <label for="currency">Currency</label>
+              <div class="select-wrapper">
+                <select id="currency" required>
+                  <option value="USD" selected>USD ($)</option>
+                  <option value="EUR">EUR (€)</option>
+                  <option value="JPY">JPY (¥)</option>
+                  <option value="GBP">GBP (£)</option>
+                  <option value="INR">INR (₹)</option>
+                  <option value="CAD">CAD (C$)</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="form-group flex-1">
+              <label for="language">Language</label>
+              <div class="select-wrapper">
+                <select id="language" required>
+                  <option value="English" selected>English</option>
+                  <option value="Spanish">Spanish</option>
+                  <option value="Japanese">Japanese</option>
+                  <option value="French">French</option>
+                  <option value="German">German</option>
+                  <option value="Hindi">Hindi</option>
+                  <option value="Telugu">Telugu (తెలుగు)</option>
+                  <option value="Telugu">Telugu (తెలుగు)</option>
+                </select>
+              </div>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label>Interests / Travel Style</label>
+            <div class="interests-tags" id="interests-container">
+              <div class="tag-checkbox">
+                <input type="checkbox" id="int-history" value="Historical Temples" checked>
+                <label for="int-history">🏛️ Historical Temples</label>
+              </div>
+              <div class="tag-checkbox">
+                <input type="checkbox" id="int-food" value="Street Food" checked>
+                <label for="int-food">🍜 Street Food</label>
+              </div>
+              <div class="tag-checkbox">
+                <input type="checkbox" id="int-nature" value="Nature Walks" checked>
+                <label for="int-nature">🌲 Nature Walks</label>
+              </div>
+              <div class="tag-checkbox">
+                <input type="checkbox" id="int-shopping" value="Shopping">
+                <label for="int-shopping">🛍️ Shopping</label>
+              </div>
+              <div class="tag-checkbox">
+                <input type="checkbox" id="int-museums" value="Museums & Arts">
+                <label for="int-museums">🖼️ Museums & Arts</label>
+              </div>
+              <div class="tag-checkbox">
+                <input type="checkbox" id="int-adventure" value="Adventure Activities">
+                <label for="int-adventure">🧗 Adventure</label>
+              </div>
+            </div>
+            
+            <div class="custom-interest-wrapper">
+              <input type="text" id="custom-interest" placeholder="Add custom interest...">
+              <button type="button" id="add-interest-btn" class="secondary-btn"><i data-lucide="plus"></i></button>
+            </div>
+          </div>
+
+          <button type="submit" id="submit-btn" class="primary-btn">
+            <span>Generate Itinerary</span>
+            <i data-lucide="sparkles"></i>
+          </button>
+        </form>
+      </section>
+
+      <!-- Right Column: Visual Dashboard -->
+      <section class="dashboard-panel">
+        <div class="panel-card workflow-card">
+          <div class="panel-header">
+            <i data-lucide="git-branch" class="header-icon blue-icon"></i>
+            <h2>LangGraph Multi-Agent Engine</h2>
+          </div>
+          
+          <div class="workflow-container">
+            <div class="graph-nodes">
+              <div class="graph-node" id="node-start">
+                <div class="node-icon-wrapper"><i data-lucide="play"></i></div>
+                <div class="node-info">
+                  <span class="node-title">START</span>
+                </div>
+              </div>
+              
+              <div class="graph-arrow" id="arrow-1"></div>
+              
+              <div class="graph-node" id="node-researcher">
+                <div class="node-icon-wrapper"><i data-lucide="search"></i></div>
+                <div class="node-info">
+                  <span class="node-title">Researcher</span>
+                  <span class="node-status">Idle</span>
+                </div>
+              </div>
+              
+              <div class="graph-arrow" id="arrow-2"></div>
+              
+              <div class="graph-node" id="node-budget">
+                <div class="node-icon-wrapper"><i data-lucide="wallet"></i></div>
+                <div class="node-info">
+                  <span class="node-title">Budget Manager</span>
+                  <span class="node-status">Idle</span>
+                </div>
+              </div>
+              
+              <div class="graph-arrow" id="arrow-3"></div>
+              
+              <div class="graph-node" id="node-planner">
+                <div class="node-icon-wrapper"><i data-lucide="calendar-days"></i></div>
+                <div class="node-info">
+                  <span class="node-title">Itinerary Planner</span>
+                  <span class="node-status">Idle</span>
+                </div>
+              </div>
+              
+              <div class="graph-arrow" id="arrow-4"></div>
+              
+              <div class="graph-node" id="node-end">
+                <div class="node-icon-wrapper"><i data-lucide="check-circle"></i></div>
+                <div class="node-info">
+                  <span class="node-title">END</span>
+                </div>
+              </div>
+            </div>
+
+            <div class="execution-banner" id="execution-status-banner">
+              <i data-lucide="info" class="banner-icon"></i>
+              <span id="execution-status-text">Select parameters and click "Generate Itinerary" to trigger agents.</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="panel-card map-card">
+          <div class="panel-header" style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
+            <div style="display: flex; align-items: center; gap: 0.5rem;">
+              <i data-lucide="map" class="header-icon green-icon"></i>
+              <h2>Interactive Destination Map</h2>
+            </div>
+            <span id="map-mode-badge" class="badge" style="font-size: 0.75rem; padding: 2px 8px; border-radius: 9999px; background: rgba(56, 189, 248, 0.2); color: #38bdf8; border: 1px solid rgba(56, 189, 248, 0.3); font-family: var(--font-main);">Leaflet Fallback</span>
+          </div>
+          <div id="map" style="height: 280px; border-radius: 8px; position: relative; z-index: 1;"></div>
+        </div>
+
+        <div class="outputs-container">
+          <div class="panel-card output-panel-card">
+            <div class="output-tabs">
+              <button class="tab-btn active" data-tab="tab-itinerary" type="button">
+                <i data-lucide="calendar-heart"></i> Final Itinerary
+              </button>
+              <button class="tab-btn" data-tab="tab-research" type="button">
+                <i data-lucide="book-open"></i> Research Notes
+              </button>
+              <button class="tab-btn" data-tab="tab-budget" type="button">
+                <i data-lucide="pie-chart"></i> Budget Breakdown
+              </button>
+            </div>
+
+            <div class="tab-contents">
+              <div class="tab-content active" id="tab-itinerary">
+                <div class="placeholder-content" id="itinerary-placeholder">
+                  <i data-lucide="file-text" class="placeholder-icon"></i>
+                  <p>Your day-by-day travel plan will be compiled here by the Itinerary Planner.</p>
+                </div>
+                <div class="rendered-markdown" id="itinerary-rendered"></div>
+              </div>
+
+              <div class="tab-content" id="tab-research">
+                <div class="placeholder-content" id="research-placeholder">
+                  <i data-lucide="search" class="placeholder-icon"></i>
+                  <p>Local highlights and top attractions found by the Researcher will appear here.</p>
+                </div>
+                <div class="rendered-markdown" id="research-rendered"></div>
+              </div>
+
+              <div class="tab-content" id="tab-budget">
+                <div class="placeholder-content" id="budget-placeholder">
+                  <i data-lucide="banknote" class="placeholder-icon"></i>
+                  <p>A structured cost breakdown estimated by the Budget Agent will appear here.</p>
+                </div>
+                <div class="rendered-markdown" id="budget-rendered"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+    </main>
+  </div>
+  <script src="script.js?v=1.3"></script>
+</body>
+</html>
