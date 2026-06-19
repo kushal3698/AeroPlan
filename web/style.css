@@ -1012,9 +1012,13 @@ body {
 .rendered-markdown.printing {
   color: #0f172a !important;
   background: #ffffff !important;
-  padding: 24px !important;
+  padding: 30px !important;
   border-radius: 8px !important;
   box-shadow: none !important;
+}
+
+.rendered-markdown.printing * {
+  color: #334155 !important;
 }
 
 .rendered-markdown.printing h1 {

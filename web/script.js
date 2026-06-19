@@ -313,24 +313,8 @@ function initApp() {
   const exportPdfBtn = document.getElementById('export-pdf-btn');
   if (exportPdfBtn) {
     exportPdfBtn.addEventListener('click', () => {
-      const sourceElement = document.getElementById('itinerary-rendered');
+      const element = document.getElementById('itinerary-rendered');
       const destination = document.getElementById('destination').value || 'Travel-Itinerary';
-      
-      // Create a temporary container for clean rendering
-      const tempContainer = document.createElement('div');
-      tempContainer.className = 'rendered-markdown printing';
-      tempContainer.innerHTML = sourceElement.innerHTML;
-      
-      // Style to render off-screen but retain full layout formatting
-      tempContainer.style.position = 'absolute';
-      tempContainer.style.left = '-9999px';
-      tempContainer.style.top = '0';
-      tempContainer.style.width = '750px'; // optimal A4 portrait pixel width
-      tempContainer.style.background = '#ffffff';
-      tempContainer.style.color = '#0f172a';
-      tempContainer.style.padding = '35px';
-      
-      document.body.appendChild(tempContainer);
       
       const opt = {
         margin:       [15, 15, 15, 15],
@@ -341,13 +325,16 @@ function initApp() {
         pagebreak:    { mode: ['avoid-all', 'css', 'legacy'] }
       };
       
-      // Introduce brief delay to ensure DOM parses node changes fully before capture
+      // Temporarily add printing class to visible container
+      element.classList.add('printing');
+      
+      // Wait for DOM layout repaint before capture
       setTimeout(() => {
-        html2pdf().set(opt).from(tempContainer).save().then(() => {
-          document.body.removeChild(tempContainer);
+        html2pdf().set(opt).from(element).save().then(() => {
+          element.classList.remove('printing');
         }).catch(err => {
           console.error("PDF generation error:", err);
-          document.body.removeChild(tempContainer);
+          element.classList.remove('printing');
         });
       }, 150);
     });
