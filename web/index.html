@@ -26,6 +26,8 @@
   <script src="https://unpkg.com/lucide@latest"></script>
   <!-- Marked Markdown Parser -->
   <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+  <!-- html2pdf Library -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -245,6 +247,14 @@
 
             <div class="tab-contents">
               <div class="tab-content active" id="tab-itinerary">
+                <div class="itinerary-actions" id="itinerary-actions" style="display: none; justify-content: flex-end; gap: 0.75rem; margin-bottom: 1.25rem; border-bottom: 1px solid rgba(255,255,255,0.06); padding-bottom: 0.75rem;">
+                  <button type="button" id="export-pdf-btn" class="secondary-btn" style="font-size: 0.85rem; padding: 0.5rem 0.85rem; display: flex; align-items: center; gap: 0.35rem;">
+                    <i data-lucide="download" style="width: 14px; height: 14px;"></i> Export PDF
+                  </button>
+                  <button type="button" id="export-ics-btn" class="secondary-btn" style="font-size: 0.85rem; padding: 0.5rem 0.85rem; display: flex; align-items: center; gap: 0.35rem;">
+                    <i data-lucide="calendar" style="width: 14px; height: 14px;"></i> Add to Calendar
+                  </button>
+                </div>
                 <div class="placeholder-content" id="itinerary-placeholder">
                   <i data-lucide="file-text" class="placeholder-icon"></i>
                   <p>Your day-by-day travel plan will be compiled here by the Itinerary Planner.</p>

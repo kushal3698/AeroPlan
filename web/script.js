@@ -10,6 +10,7 @@ function initApp() {
   let leafletMarkers = [];
   let googleMap;
   let googleMarkers = [];
+  let rawItineraryMarkdown = '';
 
   const googleDarkThemeStyles = [
     { elementType: "geometry", stylers: [{ color: "#172237" }] },
@@ -308,6 +309,159 @@ function initApp() {
     }
   });
 
+  // Export PDF click handler
+  const exportPdfBtn = document.getElementById('export-pdf-btn');
+  if (exportPdfBtn) {
+    exportPdfBtn.addEventListener('click', () => {
+      const element = document.getElementById('itinerary-rendered');
+      const destination = document.getElementById('destination').value || 'Travel-Itinerary';
+      const opt = {
+        margin:       [15, 15, 15, 15],
+        filename:     `${destination.replace(/[^a-z0-9]/gi, '_').toLowerCase()}_itinerary.pdf`,
+        image:        { type: 'jpeg', quality: 0.98 },
+        html2canvas:  { scale: 2, useCORS: true, letterRendering: true },
+        jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
+      };
+      
+      element.classList.add('printing');
+      
+      html2pdf().set(opt).from(element).toPdf().get('pdf').then((pdf) => {
+        element.classList.remove('printing');
+      }).save().catch(err => {
+        console.error("PDF generation error:", err);
+        element.classList.remove('printing');
+      });
+    });
+  }
+
+  // Export ICS calendar click handler
+  const exportIcsBtn = document.getElementById('export-ics-btn');
+  if (exportIcsBtn) {
+    exportIcsBtn.addEventListener('click', () => {
+      if (!rawItineraryMarkdown) {
+        alert('No itinerary available to export!');
+        return;
+      }
+      const destination = document.getElementById('destination').value || 'Destination';
+      const icsString = generateICS(destination, rawItineraryMarkdown);
+      if (!icsString) {
+        alert('Failed to parse itinerary events.');
+        return;
+      }
+      
+      const blob = new Blob([icsString], { type: 'text/calendar;charset=utf-8' });
+      const link = document.createElement('a');
+      link.href = window.URL.createObjectURL(blob);
+      link.download = `${destination.replace(/[^a-z0-9]/gi, '_').toLowerCase()}_calendar.ics`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    });
+  }
+
+  // Parse Markdown itinerary into an ICS format
+  function generateICS(destination, text) {
+    const lines = text.split('\n');
+    let currentDay = '';
+    let events = [];
+    
+    for (let line of lines) {
+      line = line.trim();
+      const dayMatch = line.match(/^##\s+(Day\s+\d+[:\-\s]*.*)/i);
+      if (dayMatch) {
+        currentDay = dayMatch[1];
+        continue;
+      }
+      
+      const itemMatch = line.match(/^-\s+(.*)/);
+      if (itemMatch && currentDay) {
+        let content = itemMatch[1].replace(/\*\*/g, '').trim();
+        events.push({
+          day: currentDay,
+          summary: content
+        });
+      }
+    }
+    
+    if (events.length === 0) {
+      const days = text.match(/##\s+Day\s+\d+[:\-\s]*[^\n]+/gi) || [];
+      if (days.length > 0) {
+        days.forEach((day, idx) => {
+          const dayTitle = day.replace(/^##\s+/, '');
+          events.push({
+            day: dayTitle,
+            summary: `Explore ${destination} - ${dayTitle}`
+          });
+        });
+      } else {
+        events.push({
+          day: 'Day 1',
+          summary: `Trip to ${destination}`
+        });
+      }
+    }
+    
+    let icsContent = [
+      'BEGIN:VCALENDAR',
+      'VERSION:2.0',
+      'PRODID:-//AeroPlan//Travel Itinerary//EN',
+      'CALSCALE:GREGORIAN',
+      'METHOD:PUBLISH'
+    ];
+    
+    const now = new Date();
+    const nowStr = now.toISOString().replace(/[-:]/g, '').split('.')[0] + 'Z';
+    const startDate = new Date();
+    startDate.setDate(startDate.getDate() + 1); // Starts tomorrow
+    
+    events.forEach((evt, idx) => {
+      const dayNumMatch = evt.day.match(/Day\s+(\d+)/i);
+      const dayOffset = dayNumMatch ? parseInt(dayNumMatch[1]) - 1 : 0;
+      
+      const eventDate = new Date(startDate);
+      eventDate.setDate(startDate.getDate() + dayOffset);
+      
+      const dateStr = eventDate.toISOString().split('T')[0].replace(/-/g, '');
+      let timeMatch = evt.summary.match(/^(\d{1,2}):(\d{2})\s*(AM|PM)/i);
+      let summaryText = evt.summary;
+      let startHour = 9 + (idx % 6); // default staggered
+      let startMin = 0;
+      
+      if (timeMatch) {
+        let hr = parseInt(timeMatch[1]);
+        let min = parseInt(timeMatch[2]);
+        let ampm = timeMatch[3].toUpperCase();
+        if (ampm === 'PM' && hr < 12) hr += 12;
+        if (ampm === 'AM' && hr === 12) hr = 0;
+        startHour = hr;
+        startMin = min;
+        summaryText = evt.summary.replace(/^.*?:\s*/, '');
+      }
+      
+      eventDate.setHours(startHour, startMin, 0);
+      const startStr = eventDate.toISOString().replace(/[-:]/g, '').split('.')[0] + 'Z';
+      
+      const endEventDate = new Date(eventDate);
+      endEventDate.setHours(startHour + 1);
+      const endStr = endEventDate.toISOString().replace(/[-:]/g, '').split('.')[0] + 'Z';
+      
+      const uid = `aeroplan_${dateStr}_${idx}_${Date.now()}@kushal3698.github.io`;
+      
+      icsContent.push('BEGIN:VEVENT');
+      icsContent.push(`UID:${uid}`);
+      icsContent.push(`DTSTAMP:${nowStr}`);
+      icsContent.push(`DTSTART:${startStr}`);
+      icsContent.push(`DTEND:${endStr}`);
+      icsContent.push(`SUMMARY:${summaryText} (${destination})`);
+      icsContent.push(`DESCRIPTION:${evt.day}: ${evt.summary} - Planned by AeroPlan AI`);
+      icsContent.push(`LOCATION:${destination}`);
+      icsContent.push('END:VEVENT');
+    });
+    
+    icsContent.push('END:VCALENDAR');
+    return icsContent.join('\r\n');
+  }
+
   // Reset Graph Node States
   function resetGraph() {
     const nodes = [nodeStart, nodeResearcher, nodeBudget, nodePlanner, nodeEnd];
@@ -338,6 +492,11 @@ function initApp() {
     researchPlaceholder.style.display = 'flex';
     budgetRendered.innerHTML = '';
     budgetPlaceholder.style.display = 'flex';
+
+    const actionsDiv = document.getElementById('itinerary-actions');
+    if (actionsDiv) {
+      actionsDiv.style.display = 'none';
+    }
 
     // Collect form values
     const destination = document.getElementById('destination').value;
@@ -439,6 +598,11 @@ function initApp() {
         
         // Return tab focus back to itinerary
         activateTab('tab-itinerary');
+
+        const actionsDiv = document.getElementById('itinerary-actions');
+        if (actionsDiv) {
+          actionsDiv.style.display = 'flex';
+        }
         break;
 
       case 'error':
@@ -505,6 +669,7 @@ function initApp() {
     } 
     else if (node === 'planner') {
       const itinerary = data.final_itinerary;
+      rawItineraryMarkdown = itinerary;
       itineraryPlaceholder.style.display = 'none';
       itineraryRendered.innerHTML = marked.parse(itinerary);
       activateTab('tab-itinerary');
