@@ -313,8 +313,28 @@ function initApp() {
   const exportPdfBtn = document.getElementById('export-pdf-btn');
   if (exportPdfBtn) {
     exportPdfBtn.addEventListener('click', () => {
-      const element = document.getElementById('itinerary-rendered');
+      const sourceElement = document.getElementById('itinerary-rendered');
       const destination = document.getElementById('destination').value || 'Travel-Itinerary';
+      
+      // Create a temporary cloned container for rendering
+      const tempContainer = document.createElement('div');
+      tempContainer.className = 'rendered-markdown printing';
+      tempContainer.innerHTML = sourceElement.innerHTML;
+      
+      // Style to render behind the main app but retain full layout formatting
+      tempContainer.style.position = 'absolute';
+      tempContainer.style.left = '0';
+      tempContainer.style.top = '0';
+      tempContainer.style.width = '800px'; // standard desktop page width for clean scaling
+      tempContainer.style.zIndex = '-9999';
+      tempContainer.style.background = '#ffffff';
+      tempContainer.style.color = '#0f172a';
+      tempContainer.style.padding = '35px';
+      tempContainer.style.boxSizing = 'border-box';
+      tempContainer.style.height = 'auto'; // allow natural vertical expansion
+      tempContainer.style.overflow = 'visible'; // prevent any scroll clipping
+      
+      document.body.appendChild(tempContainer);
       
       const opt = {
         margin:       [15, 15, 15, 15],
@@ -325,16 +345,13 @@ function initApp() {
         pagebreak:    { mode: ['avoid-all', 'css', 'legacy'] }
       };
       
-      // Temporarily add printing class to visible container
-      element.classList.add('printing');
-      
-      // Wait for DOM layout repaint before capture
+      // Introduce brief delay to ensure layout computation is complete
       setTimeout(() => {
-        html2pdf().set(opt).from(element).save().then(() => {
-          element.classList.remove('printing');
+        html2pdf().set(opt).from(tempContainer).save().then(() => {
+          document.body.removeChild(tempContainer);
         }).catch(err => {
           console.error("PDF generation error:", err);
-          element.classList.remove('printing');
+          document.body.removeChild(tempContainer);
         });
       }, 150);
     });
