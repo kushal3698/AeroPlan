@@ -46,6 +46,52 @@ exchange_rates = {
     "CAD": (1.37, "C$")
 }
 
+# Fact-Checking Database for popular travel attractions
+REAL_WORLD_COST_DB = {
+    "wonderla": {"cost_usd": 15.0, "notes": "Ticket price is approx. 1200-1500 INR"},
+    "eiffel tower": {"cost_usd": 25.0, "notes": "Standard ticket to summit"},
+    "louvre": {"cost_usd": 24.0, "notes": "Louvre Museum entry"},
+    "disneyland": {"cost_usd": 60.0, "notes": "1-day passport ticket"},
+    "universal studios": {"cost_usd": 65.0, "notes": "1-day pass"},
+    "taj mahal": {"cost_usd": 15.0, "notes": "Foreign tourist ticket"},
+    "empire state": {"cost_usd": 44.0, "notes": "86th floor observatory ticket"},
+    "statue of liberty": {"cost_usd": 24.0, "notes": "Ferry and pedestal ticket"},
+    "london eye": {"cost_usd": 45.0, "notes": "Standard entry ticket"},
+    "colosseum": {"cost_usd": 20.0, "notes": "Standard entry ticket"},
+    "sagrada": {"cost_usd": 28.0, "notes": "Temple entry ticket"},
+    "sydney opera house": {"cost_usd": 30.0, "notes": "Standard guided tour"},
+    "fushimi inari": {"cost_usd": 0.0, "notes": "Free entry"},
+    "kinkaku-ji": {"cost_usd": 3.5, "notes": "Temple entry ticket"},
+    "kiyomizu-dera": {"cost_usd": 3.0, "notes": "Temple entry ticket"},
+    "arashiyama": {"cost_usd": 0.0, "notes": "Free entry"}
+}
+
+# Average daily baseline costs (USD) in popular cities to scale realistically
+CITY_COST_PROFILES = {
+    "new york": {"lodging": 180.0, "dining": 60.0, "transit": 15.0, "activities": 35.0},
+    "london": {"lodging": 140.0, "dining": 50.0, "transit": 15.0, "activities": 30.0},
+    "paris": {"lodging": 130.0, "dining": 50.0, "transit": 12.0, "activities": 25.0},
+    "tokyo": {"lodging": 110.0, "dining": 45.0, "transit": 10.0, "activities": 25.0},
+    "rome": {"lodging": 100.0, "dining": 45.0, "transit": 8.0, "activities": 20.0},
+    "sydney": {"lodging": 120.0, "dining": 50.0, "transit": 12.0, "activities": 25.0},
+    "barcelona": {"lodging": 95.0, "dining": 40.0, "transit": 8.0, "activities": 20.0},
+    "kyoto": {"lodging": 90.0, "dining": 40.0, "transit": 10.0, "activities": 15.0},
+    "delhi": {"lodging": 35.0, "dining": 15.0, "transit": 5.0, "activities": 8.0},
+    "mumbai": {"lodging": 45.0, "dining": 18.0, "transit": 6.0, "activities": 10.0},
+    "bangalore": {"lodging": 40.0, "dining": 16.0, "transit": 5.0, "activities": 10.0},
+    "kochi": {"lodging": 30.0, "dining": 12.0, "transit": 4.0, "activities": 8.0}
+}
+
+def get_fact_checked_activity_cost(attraction_name, default_cost, sym, rate):
+    attr_lower = attraction_name.lower()
+    for key, val in REAL_WORLD_COST_DB.items():
+        if key in attr_lower:
+            real_cost_usd = val["cost_usd"]
+            # Convert to target currency based on exchange rate
+            real_cost = int(real_cost_usd * rate)
+            return real_cost
+    return default_cost
+
 # Translation structures for Mock LLM fallbacks
 english_defaults = {
     "research_title": "### \U0001f5fa\ufe0f Research Summary for {destination}",
@@ -442,55 +488,242 @@ def get_city_attractions(city_name):
         except Exception as e:
             return f"Popular destination known for its cultural heritage, dining, and scenic locations."
 
-def get_clean_directions(start_place, end_place):
+def get_backup_directions(start_place, end_place, language="English"):
+    start_clean = start_place.lower().strip()
+    end_clean = end_place.lower().strip()
+    
+    kyoto_station_fushimi = "kyoto station" in start_clean and "fushimi inari" in end_clean
+    kyoto_station_arashiyama = "kyoto station" in start_clean and "arashiyama" in end_clean
+    fushimi_kiyomizu = "fushimi inari" in start_clean and "kiyomizu" in end_clean
+    
+    routes_db = {
+        "English": {
+            "k_fushimi": [
+                "Take the JR Nara Line from Kyoto Station to Inari Station (5 mins, 2.7 km).",
+                "Exit Inari Station and walk east toward the main shrine gate (3 mins, 200m)."
+            ],
+            "k_arashiyama": [
+                "Take the JR San-in Line from Kyoto Station to Saga-Arashiyama Station (15 mins, 10 km).",
+                "Walk west along the main road to the Bamboo Grove entrance (10 mins, 800m)."
+            ],
+            "f_kiyomizu": [
+                "Take the Keihan Main Line from Fushimi-Inari Station to Kiyomizu-Gojo Station (8 mins, 3.5 km).",
+                "Walk east up the hill toward Kiyomizu-dera Temple (20 mins, 1.2 km)."
+            ],
+            "default": [
+                f"Depart from {start_place} toward the nearest transit hub.",
+                f"Take the local train or bus line heading toward {end_place}.",
+                f"Arrive at {end_place} and follow local signs to the entrance."
+            ]
+        },
+        "Spanish": {
+            "k_fushimi": [
+                "Tome la línea JR Nara desde la estación de Kioto hasta la estación de Inari (5 min, 2.7 km).",
+                "Salga de la estación de Inari y camine hacia el este hacia la puerta principal del santuario (3 min, 200m)."
+            ],
+            "k_arashiyama": [
+                "Tome la línea JR San-in desde la estación de Kioto hasta la estación de Saga-Arashiyama (15 min, 10 km).",
+                "Camine hacia el oeste por la calle principal hacia la entrada del bosque de bambú (10 min, 800m)."
+            ],
+            "f_kiyomizu": [
+                "Tome la línea principal de Keihan desde la estación Fushimi-Inari hasta la estación Kiyomizu-Gojo (8 min, 3.5 km).",
+                "Camine hacia el este subiendo la colina hacia el templo Kiyomizu-dera (20 min, 1.2 km)."
+            ],
+            "default": [
+                f"Salga de {start_place} hacia el centro de transporte más cercano.",
+                f"Tome el tren o autobús local en dirección a {end_place}.",
+                f"Llegue a {end_place} y siga las señales hacia la entrada."
+            ]
+        },
+        "Japanese": {
+            "k_fushimi": [
+                "京都駅からJR奈良線で稲荷駅へ移動します (約5分, 2.7 km)。",
+                "稲荷駅を出て、東の本殿方面へ徒歩で進みます (約3分, 200m)。"
+            ],
+            "k_arashiyama": [
+                "京都駅からJR山陰本線で嵯峨嵐山駅へ移動します (約15分, 10 km)。",
+                "メイン通りを西へ竹林の小径の入口方面へ歩きます (約10分, 800m)。"
+            ],
+            "f_kiyomizu": [
+                "伏見稲荷駅から京阪本線で清水五条駅へ移動します (約8分, 3.5 km)。",
+                "東の坂道を清水寺方面へ歩いて上ります (約20分, 1.2 km)。"
+            ],
+            "default": [
+                f"{start_place}を出発し、最寄りの公共交通機関に向かいます。",
+                f"{end_place}行きのローカル線またはバスに乗車します。",
+                f"{end_place}に到着後、案内標識に従って入口へ向かいます。"
+            ]
+        },
+        "French": {
+            "k_fushimi": [
+                "Prendre la ligne JR Nara de la gare de Kyoto à la gare d'Inari (5 min, 2.7 km).",
+                "Sortir de la gare d'Inari et marcher vers l'est en direction de l'entrée du sanctuaire (3 min, 200m)."
+            ],
+            "k_arashiyama": [
+                "Prendre la ligne JR San-in de la gare de Kyoto à la gare de Saga-Arashiyama (15 min, 10 km).",
+                "Marcher vers l'ouest sur la rue principale vers l'entrée de la bambouseraie (10 min, 800m)."
+            ],
+            "f_kiyomizu": [
+                "Prendre la ligne Keihan de la gare Fushimi-Inari à la gare Kiyomizu-Gojo (8 min, 3.5 km).",
+                "Marcher vers l'est en montant la colline vers le temple Kiyomizu-dera (20 min, 1.2 km)."
+            ],
+            "default": [
+                f"Départ de {start_place} vers le centre de transport le plus proche.",
+                f"Prendre le bus ou le train local en direction de {end_place}.",
+                f"Arriver à {end_place} et suivre les indications vers l'entrée."
+            ]
+        },
+        "German": {
+            "k_fushimi": [
+                "Nehmen Sie die JR Nara-Linie vom Bahnhof Kyoto zum Bahnhof Inari (5 Min., 2,7 km).",
+                "Verlassen Sie den Bahnhof Inari und gehen Sie nach Osten zum Haupttor des Schreins (3 Min., 200m)."
+            ],
+            "k_arashiyama": [
+                "Nehmen Sie die JR San-in-Linie vom Bahnhof Kyoto zum Bahnhof Saga-Arashiyama (15 Min., 10 km).",
+                "Gehen Sie auf der Hauptstraße nach Westen zum Eingang des Bambuswaldes (10 Min., 800m)."
+            ],
+            "f_kiyomizu": [
+                "Nehmen Sie die Keihan-Hauptlinie vom Bahnhof Fushimi-Inari zum Bahnhof Kiyomizu-Gojo (8 Min., 3,5 km).",
+                "Gehen Sie den Hügel hinauf nach Osten zum Kiyomizu-dera-Tempel (20 Min., 1,2 km)."
+            ],
+            "default": [
+                f"Abfahrt von {start_place} zum nächsten Verkehrsknotenpunkt.",
+                f"Nehmen Sie den Bus oder Zug in Richtung {end_place}.",
+                f"Ankunft bei {end_place} und den Schildern zum Eingang folgen."
+            ]
+        },
+        "Hindi": {
+            "k_fushimi": [
+                "क्यूशू स्टेशन से जेआर नारा लाइन लेकर इनारी स्टेशन पहुंचें (5 मिनट, 2.7 किमी)।",
+                "इनारी स्टेशन से बाहर निकलें और पूर्व की ओर मुख्य मंदिर द्वार की तरफ चलें (3 मिनट, 200 मीटर)।"
+            ],
+            "k_arashiyama": [
+                "क्यूशू स्टेशन से जेआर सैन-इन लाइन लेकर सागा-आराशियामा स्टेशन पहुंचें (15 मिनट, 10 किमी)।",
+                "बांस के जंगल के प्रवेश द्वार की ओर मुख्य सड़क पर पश्चिम की ओर चलें (10 मिनट, 800 मीटर)।"
+            ],
+            "f_kiyomizu": [
+                "फुशिमी-इनारी स्टेशन से केहान मेन लाइन लेकर कियोमिज़ु-गोजो स्टेशन पहुंचें (8 मिनट, 3.5 किमी)।",
+                "कियोमिज़ु-डेरा मंदिर की ओर पूर्व की दिशा में पहाड़ी पर चढ़ें (20 मिनट, 1.2 किमी)।"
+            ],
+            "default": [
+                f"{start_place} से निकटतम परिवहन केंद्र की ओर प्रस्थान करें।",
+                f"{end_place} की ओर जाने वाली स्थानीय ट्रेन या बस लें।",
+                f"{end_place} पर पहुंचें और मुख्य द्वार के लिए स्थानीय संकेतों का पालन करें।"
+            ]
+        },
+        "Telugu": {
+            "k_fushimi": [
+                "క్యోటో స్టేషన్ నుండి జెఆర్ నారా లైన్ ద్వారా ఇనారి స్టేషన్‌కు వెళ్లండి (5 నిమిషాలు, 2.7 కిమీ).",
+                "ఇనారి స్టేషన్ నుండి బయటకు వచ్చి ప్రధాన ఆలయ ద్వారం వైపు తూర్పుగా నడవండి (3 నిమిషాలు, 200 మీటర్లు)."
+            ],
+            "k_arashiyama": [
+                "క్యోటో స్టేషన్ నుండి జెఆర్ శాన్-ఇన్ లైన్ ద్వారా సగా-అరాషియామా స్టేషన్‌కు వెళ్లండి (15 నిమిషాలు, 10 కిమీ).",
+                "వెదురు అడవి ప్రవేశ ద్వారం వైపు ప్రధాన రహదారి వెంట పడమరగా నడవండి (10 నిమిషాలు, 800 మీటర్లు)."
+            ],
+            "f_kiyomizu": [
+                "ఫుషిమి-ఇనారి స్టేషన్ నుండి కేహాన్ మెయిన్ లైన్ ద్వారా కియోమిజు-గోజో స్టేషన్‌కు వెళ్లండి (8 నిమిషాలు, 3.5 కిమీ).",
+                "కియోమిజు-దెరా ఆలయం వైపు కొండపైకి తూర్పుగా నడవండి (20 నిమిషాలు, 1.2 కిమీ)."
+            ],
+            "default": [
+                f"{start_place} నుండి సమీప రవాణా కేంద్రం వైపు బయలుదేరండి.",
+                f"{end_place} వైపు వెళ్లే లోకల్ రైలు లేదా బస్సును ఎక్కండి.",
+                f"{end_place} కి చేరుకుని ప్రధాన ద్వారం వైపు వెళ్లడానికి స్థానిక సూచనలను అనుసరించండి."
+            ]
+        }
+    }
+    
+    lang_db = routes_db.get(language, routes_db["English"])
+    if kyoto_station_fushimi:
+        return lang_db["k_fushimi"]
+    elif kyoto_station_arashiyama:
+        return lang_db["k_arashiyama"]
+    elif fushimi_kiyomizu:
+        return lang_db["f_kiyomizu"]
+    else:
+        return lang_db["default"]
+
+def get_clean_directions(start_place, end_place, language="English"):
+    # 1. Google Directions API
+    google_key = os.environ.get("GOOGLE_MAPS_API_KEY")
+    if google_key and google_key.strip() and not google_key.startswith("your_"):
+        try:
+            url = "https://maps.googleapis.com/maps/api/directions/json"
+            params = {
+                "origin": start_place,
+                "destination": end_place,
+                "key": google_key
+            }
+            r = requests.get(url, params=params, verify=False, timeout=5).json()
+            if r.get("status") == "OK" and r.get("routes"):
+                steps = r["routes"][0]["legs"][0]["steps"]
+                instructions = []
+                for step in steps:
+                    html_txt = step.get("html_instructions", "")
+                    clean_txt = re.sub(r'<[^<]+?>', '', html_txt)
+                    dist_text = step.get("distance", {}).get("text", "")
+                    dur_text = step.get("duration", {}).get("text", "")
+                    if dist_text or dur_text:
+                        details = []
+                        if dist_text:
+                            details.append(dist_text)
+                        if dur_text:
+                            details.append(dur_text)
+                        clean_txt += f" ({', '.join(details)})"
+                    instructions.append(clean_txt)
+                if instructions:
+                    return instructions
+        except Exception as e:
+            print(f"Error fetching Google Directions: {e}")
+
+    # 2. OSRM / Nominatim fallback
     try:
         start_url = f"https://nominatim.openstreetmap.org/search?format=json&q={urllib.parse.quote(start_place)}"
         start_headers = {"User-Agent": "AeroPlanTravelPlanner/1.0"}
         r1 = requests.get(start_url, headers=start_headers, verify=False, timeout=5).json()
-        if not r1:
-            return []
-        start_lon, start_lat = r1[0]["lon"], r1[0]["lat"]
+        if r1:
+            start_lon, start_lat = r1[0]["lon"], r1[0]["lat"]
 
-        end_url = f"https://nominatim.openstreetmap.org/search?format=json&q={urllib.parse.quote(end_place)}"
-        r2 = requests.get(end_url, headers=start_headers, verify=False, timeout=5).json()
-        if not r2:
-            return []
-        end_lon, end_lat = r2[0]["lon"], r2[0]["lat"]
+            end_url = f"https://nominatim.openstreetmap.org/search?format=json&q={urllib.parse.quote(end_place)}"
+            r2 = requests.get(end_url, headers=start_headers, verify=False, timeout=5).json()
+            if r2:
+                end_lon, end_lat = r2[0]["lon"], r2[0]["lat"]
 
-        osrm_url = f"http://router.project-osrm.org/route/v1/driving/{start_lon},{start_lat};{end_lon},{end_lat}?overview=false&steps=true"
-        r_osrm = requests.get(osrm_url, verify=False, timeout=5).json()
-        if "routes" not in r_osrm or not r_osrm["routes"]:
-            return []
-        steps = r_osrm['routes'][0]['legs'][0]['steps']
-        instructions = []
-        for step in steps:
-            m = step.get('maneuver', {})
-            m_type = m.get('type', '')
-            m_mod = m.get('modifier', '')
-            name = step.get('name', '')
-            dist = step.get('distance', 0)
-            
-            if m_type == 'depart':
-                txt = "Depart"
-                if m_mod and m_mod != 'uturn':
-                    txt += f" heading {m_mod}"
-            elif m_type == 'arrive':
-                txt = "Arrive at destination"
-            elif m_type == 'turn':
-                txt = f"Turn {m_mod}" if m_mod else "Turn"
-            else:
-                txt = m_type.replace('_', ' ').capitalize()
-                if m_mod:
-                    txt += f" {m_mod}"
-            if name:
-                txt += f" onto {name}"
-            if dist > 0:
-                txt += f" (for {int(dist)}m)"
-            instructions.append(txt)
-        return instructions
+                osrm_url = f"http://router.project-osrm.org/route/v1/driving/{start_lon},{start_lat};{end_lon},{end_lat}?overview=false&steps=true"
+                r_osrm = requests.get(osrm_url, verify=False, timeout=5).json()
+                if "routes" in r_osrm and r_osrm["routes"]:
+                    steps = r_osrm['routes'][0]['legs'][0]['steps']
+                    instructions = []
+                    for step in steps:
+                        m = step.get('maneuver', {})
+                        m_type = m.get('type', '')
+                        m_mod = m.get('modifier', '')
+                        name = step.get('name', '')
+                        dist = step.get('distance', 0)
+                        
+                        if m_type == 'depart':
+                            txt = "Depart"
+                            if m_mod and m_mod != 'uturn':
+                                txt += f" heading {m_mod}"
+                        elif m_type == 'arrive':
+                            txt = "Arrive at destination"
+                        elif m_type == 'turn':
+                            txt = f"Turn {m_mod}" if m_mod else "Turn"
+                        else:
+                            txt = m_type.replace('_', ' ').capitalize()
+                            if m_mod:
+                                txt += f" {m_mod}"
+                        if name:
+                            txt += f" onto {name}"
+                        if dist > 0:
+                            txt += f" (for {int(dist)}m)"
+                        instructions.append(txt)
+                    if instructions:
+                        return instructions
     except Exception as e:
         print(f"Error fetching OSRM directions: {e}")
-        return []
+        
+    # 3. Mapped / Default Backup directions
+    return get_backup_directions(start_place, end_place, language)
 
 def get_itinerary_day_template(language, morning_spot, lunch_spot, afternoon_spot, evening_spot, evening_food, sym, cost_morning, cost_lunch, cost_afternoon, cost_evening):
     templates = {
@@ -726,11 +959,25 @@ def get_mock_response(system_content: str) -> str:
 """
 
     elif "budget manager" in system_content.lower():
-        base_lodging = 90.0 if is_kyoto else 80.0
-        base_dining = 40.0 if is_kyoto else 45.0
-        base_transit = 10.0 if is_kyoto else 15.0
-        base_activities = 15.0 if is_kyoto else 20.0
-        base_misc = 10.0 if is_kyoto else 10.0
+        # Resolve cost averages via CITY_COST_PROFILES
+        city_prof = None
+        dest_lower = destination.lower()
+        for city_key, prof in CITY_COST_PROFILES.items():
+            if city_key in dest_lower:
+                city_prof = prof
+                break
+                
+        if city_prof:
+            base_lodging = city_prof["lodging"]
+            base_dining = city_prof["dining"]
+            base_transit = city_prof["transit"]
+            base_activities = city_prof["activities"]
+        else:
+            base_lodging = 90.0 if is_kyoto else 80.0
+            base_dining = 40.0 if is_kyoto else 45.0
+            base_transit = 10.0 if is_kyoto else 15.0
+            base_activities = 15.0 if is_kyoto else 20.0
+        base_misc = 10.0
         
         lodging = int(base_lodging * rate)
         dining = int(base_dining * rate)
@@ -740,25 +987,50 @@ def get_mock_response(system_content: str) -> str:
         
         daily_total = lodging + dining + transit + activities + misc
         total_est = daily_total * duration
-        
-        # FIX: budget_limit is already in the target currency, do not multiply by rate!
         converted_limit = int(budget_limit)
+        
+        # Enforce minimum cost floors (Lodging: $20, Dining: $12)
+        min_lodging_usd = 20.0
+        min_dining_usd = 12.0
+        min_transit_usd = 3.0
+        min_activities_usd = 2.0
+        min_misc_usd = 2.0
         
         # Scaling logic: if estimate exceeds limit, scale down base costs to fit strictly within budget
         if total_est > converted_limit:
             target_total = converted_limit * 0.95
             scale = target_total / total_est
-            lodging = max(int(lodging * scale), int(15 * rate))
-            dining = max(int(dining * scale), int(10 * rate))
-            transit = max(int(transit * scale), int(3 * rate))
-            activities = max(int(activities * scale), int(2 * rate))
-            misc = max(int(misc * scale), int(2 * rate))
+            lodging = max(int(lodging * scale), int(min_lodging_usd * rate))
+            dining = max(int(dining * scale), int(min_dining_usd * rate))
+            transit = max(int(transit * scale), int(min_transit_usd * rate))
+            activities = max(int(activities * scale), int(min_activities_usd * rate))
+            misc = max(int(misc * scale), int(min_misc_usd * rate))
             
             daily_total = lodging + dining + transit + activities + misc
             total_est = daily_total * duration
             
         status_text = t["within_budget"] if total_est <= converted_limit else t["exceeds_budget"]
         
+        # Warning alert if the selected budget is too tight
+        min_survival_daily = min_lodging_usd + min_dining_usd + min_transit_usd
+        min_survival_total = min_survival_daily * duration
+        is_budget_too_tight = (budget_limit / rate) < min_survival_total
+        
+        warning_banner = ""
+        warning_alerts = {
+            "English": "⚠️ **Warning: Your budget is extremely tight for this destination!** We recommend increasing your budget to at least {sym}{min_budget} to cover baseline lodging and meals.",
+            "Spanish": "⚠️ **Advertencia: ¡Su presupuesto es extremadamente ajustado para este destino!** Recomendamos aumentar su presupuesto a al menos {sym}{min_budget} para cubrir el alojamiento y las comidas básicas.",
+            "Japanese": "⚠️ **警告：この目的地の予算が非常に厳しくなっています！** 基本的な宿泊費と食費をカバーするために、予算を少なくとも {sym}{min_budget} に増やすことをお勧めします。",
+            "French": "⚠️ **Attention : Votre budget est extrêmement serré pour cette destination !** Nous vous recommandons d'augmenter votre budget à au moins {sym}{min_budget} pour couvrir l'hébergement et les repas de base.",
+            "German": "⚠️ **Warnung: Ihr Budget ist für dieses Reiseziel extrem knapp!** Wir empfehlen, Ihr Budget auf mindestens {sym}{min_budget} zu erhöhen, um Unterkunft und Mahlzeiten zu decken.",
+            "Hindi": "⚠️ **चेतावनी: इस गंतव्य के लिए आपका बजट बहुत कम है!** बुनियादी आवास और भोजन के खर्चों के लिए हम आपके बजट को कम से कम {sym}{min_budget} तक बढ़ाने की सलाह देते हैं।",
+            "Telugu": "⚠️ **హెచ్చరిక: ఈ గమ్యస్థానానికి మీ బడ్జెట్ చాలా తక్కువగా ఉంది!** కనీస వసతి మరియు భోజన ఖర్చుల కోసం మీ బడ్జెట్‌ను కనీసం {sym}{min_budget} కి పెంచాల్సిందిగా సిఫార్సు చేస్తున్నాము."
+        }
+        
+        if is_budget_too_tight:
+            recommended_budget = int(min_survival_total * rate)
+            warning_banner = warning_alerts.get(language, warning_alerts["English"]).format(sym=sym, min_budget=recommended_budget) + "\n\n"
+            
         title = t["budget_title"].format(duration=duration, destination=destination)
         total_lbl = t["est_total"].format(sym=sym, total=total_est)
         limit_lbl = t["limit_label"].format(sym=sym, limit=converted_limit)
@@ -770,7 +1042,7 @@ def get_mock_response(system_content: str) -> str:
         details_transit = f"Public transit pass in {destination}"
         details_activities = f"Entry fees for {city_details['attractions'][0]}"
         details_misc = "Souvenirs and pocket money"
-
+        
         categories = t["categories"]
         
         table = f"""{t["table_headers"].format(curr=currency)}
@@ -781,10 +1053,10 @@ def get_mock_response(system_content: str) -> str:
 | **{categories["Activities & Entry"]}** | {sym}{activities} | {sym}{activities * duration} | {details_activities} |
 | **{categories["Miscellaneous"]}** | {sym}{misc} | {sym}{misc * duration} | {details_misc} |
 | **{categories["Total"]}** | **{sym}{daily_total}** | **{sym}{total_est}** | **Ready for booking** |"""
-
+        
         saving_tips = "\n".join(f"- {tip}" for tip in city_details["tips"])
-
-        return f"""{title}
+        
+        return f"""{warning_banner}{title}
 {total_lbl}
 {limit_lbl}
 {status_lbl}
@@ -799,12 +1071,25 @@ def get_mock_response(system_content: str) -> str:
         title = t["itinerary-title"] if "itinerary-title" in t else t["itinerary_title"]
         title_formatted = title.format(duration=duration, destination=destination)
         
-        # Scale costs inside planner node as well to remain consistent
-        base_lodging = 90.0 if is_kyoto else 80.0
-        base_dining = 40.0 if is_kyoto else 45.0
-        base_transit = 10.0 if is_kyoto else 15.0
-        base_activities = 15.0 if is_kyoto else 20.0
-        base_misc = 10.0 if is_kyoto else 10.0
+        # Scale costs inside planner node as well to remain consistent using CITY_COST_PROFILES
+        city_prof = None
+        dest_lower = destination.lower()
+        for city_key, prof in CITY_COST_PROFILES.items():
+            if city_key in dest_lower:
+                city_prof = prof
+                break
+                
+        if city_prof:
+            base_lodging = city_prof["lodging"]
+            base_dining = city_prof["dining"]
+            base_transit = city_prof["transit"]
+            base_activities = city_prof["activities"]
+        else:
+            base_lodging = 90.0 if is_kyoto else 80.0
+            base_dining = 40.0 if is_kyoto else 45.0
+            base_transit = 10.0 if is_kyoto else 15.0
+            base_activities = 15.0 if is_kyoto else 20.0
+        base_misc = 10.0
         
         lodging = int(base_lodging * rate)
         dining = int(base_dining * rate)
@@ -816,14 +1101,21 @@ def get_mock_response(system_content: str) -> str:
         total_est = daily_total * duration
         converted_limit = int(budget_limit)
         
+        # Enforce minimum cost floors (Lodging: $20, Dining: $12)
+        min_lodging_usd = 20.0
+        min_dining_usd = 12.0
+        min_transit_usd = 3.0
+        min_activities_usd = 2.0
+        min_misc_usd = 2.0
+        
         if total_est > converted_limit:
             target_total = converted_limit * 0.95
             scale = target_total / total_est
-            lodging = max(int(lodging * scale), int(15 * rate))
-            dining = max(int(dining * scale), int(10 * rate))
-            transit = max(int(transit * scale), int(3 * rate))
-            activities = max(int(activities * scale), int(2 * rate))
-            misc = max(int(misc * scale), int(2 * rate))
+            lodging = max(int(lodging * scale), int(min_lodging_usd * rate))
+            dining = max(int(dining * scale), int(min_dining_usd * rate))
+            transit = max(int(transit * scale), int(min_transit_usd * rate))
+            activities = max(int(activities * scale), int(min_activities_usd * rate))
+            misc = max(int(misc * scale), int(min_misc_usd * rate))
             daily_total = lodging + dining + transit + activities + misc
             total_est = daily_total * duration
 
@@ -832,12 +1124,39 @@ def get_mock_response(system_content: str) -> str:
         val_lunch = int(dining * 0.35)
         val_evening_din = int(dining * 0.65)
         
+        # Warning alert if the selected budget is too tight
+        min_survival_daily = min_lodging_usd + min_dining_usd + min_transit_usd
+        min_survival_total = min_survival_daily * duration
+        is_budget_too_tight = (budget_limit / rate) < min_survival_total
+        
+        warning_banner = ""
+        warning_alerts = {
+            "English": "⚠️ **Warning: Your budget is extremely tight for this destination!** We recommend increasing your budget to at least {sym}{min_budget} to cover baseline lodging and meals.",
+            "Spanish": "⚠️ **Advertencia: ¡Su presupuesto es extremadamente ajustado para este destino!** Recomendamos aumentar su presupuesto a al menos {sym}{min_budget} para cubrir el alojamiento y las comidas básicas.",
+            "Japanese": "⚠️ **警告：この目的地の予算が非常に厳しくなっています！** 基本的な宿泊費と食費をカバーするために、予算を少なくとも {sym}{min_budget} に増やすことをお勧めします。",
+            "French": "⚠️ **Attention : Votre budget est extrêmement serré pour cette destination !** Nous vous recommandons d'augmenter votre budget à au moins {sym}{min_budget} pour couvrir l'hébergement et les repas de base.",
+            "German": "⚠️ **Warnung: Ihr Budget ist für dieses Reiseziel extrem knapp!** Wir empfehlen, Ihr Budget auf mindestens {sym}{min_budget} zu erhöhen, um Unterkunft und Mahlzeiten zu decken.",
+            "Hindi": "⚠️ **चेतावनी: इस गंतव्य के लिए आपका बजट बहुत कम है!** बुनियादी आवास और भोजन के खर्चों के लिए हम आपके बजट को कम से कम {sym}{min_budget} तक बढ़ाने की सलाह देते हैं।",
+            "Telugu": "⚠️ **హెచ్చరిక: ఈ గమ్యస్థానానికి మీ బడ్జెట్ చాలా తక్కువగా ఉంది!** కనీస వసతి మరియు భోజన ఖర్చుల కోసం మీ బడ్జెట్‌ను కనీసం {sym}{min_budget} కి పెంచాల్సిందిగా సిఫార్సు చేస్తున్నాము."
+        }
+        
+        if is_budget_too_tight:
+            recommended_budget = int(min_survival_total * rate)
+            warning_banner = warning_alerts.get(language, warning_alerts["English"]).format(sym=sym, min_budget=recommended_budget) + "\n\n"
+        
         if is_kyoto and language in kyoto_localizations:
             k = kyoto_localizations[language]
+            
+            # Fetch fact-checked costs for Kyoto attractions
+            cost_fushimi = get_fact_checked_activity_cost("Fushimi Inari Shrine", val_morning_act, sym, rate)
+            cost_kinkaku = get_fact_checked_activity_cost("Kinkaku-ji", val_afternoon_act, sym, rate)
+            cost_arashiyama = get_fact_checked_activity_cost("Arashiyama Bamboo Grove", val_morning_act, sym, rate)
+            cost_kiyomizu = get_fact_checked_activity_cost("Kiyomizu-dera", val_morning_act, sym, rate)
+            
             # Replace placeholder costs in the translated Kyoto plans
-            day1_body = k["itinerary_day1"].replace("*(Est: $15)*", f"*(Est: {sym}{val_lunch})*").replace("*(Est: $5 entry)*", f"*(Est: {sym}{val_morning_act} entry)*").replace("*(Est: $18)*", f"*(Est: {sym}{val_evening_din})*")
-            day2_body = k["itinerary_day2"].replace("*(Est: $5 entry)*", f"*(Est: {sym}{val_morning_act} entry)*").replace("*(Est: $25)*", f"*(Est: {sym}{val_lunch})*").replace("*(Est: $10)*", f"*(Est: {sym}{val_afternoon_act})*").replace("*(Est: $30)*", f"*(Est: {sym}{val_evening_din})*")
-            day3_body = k["itinerary_day3"].replace("*(Est: $4 entry)*", f"*(Est: {sym}{val_morning_act} entry)*").replace("*(Est: $12)*", f"*(Est: {sym}{val_lunch})*").replace("*(Est: $10)*", f"*(Est: {sym}{val_afternoon_act})*").replace("*(Est: $25)*", f"*(Est: {sym}{val_evening_din})*")
+            day1_body = k["itinerary_day1"].replace("*(Est: $15)*", f"*(Est: {sym}{val_lunch})*").replace("*(Est: $5 entry)*", f"*(Est: {sym}{cost_fushimi} entry)*").replace("*(Est: $18)*", f"*(Est: {sym}{val_evening_din})*")
+            day2_body = k["itinerary_day2"].replace("*(Est: $5 entry)*", f"*(Est: {sym}{cost_arashiyama} entry)*").replace("*(Est: $25)*", f"*(Est: {sym}{val_lunch})*").replace("*(Est: $10)*", f"*(Est: {sym}{val_afternoon_act})*").replace("*(Est: $30)*", f"*(Est: {sym}{val_evening_din})*")
+            day3_body = k["itinerary_day3"].replace("*(Est: $4 entry)*", f"*(Est: {sym}{cost_kiyomizu} entry)*").replace("*(Est: $12)*", f"*(Est: {sym}{val_lunch})*").replace("*(Est: $10)*", f"*(Est: {sym}{val_afternoon_act})*").replace("*(Est: $25)*", f"*(Est: {sym}{val_evening_din})*")
             
             day1_title = t["day_label"].format(d=1) + ": " + k.get("day1_title", "Historic Temples & Street Food")
             day2_title = t["day_label"].format(d=2) + ": " + k.get("day2_title", "Bamboo Groves & Tea Culture")
@@ -845,24 +1164,24 @@ def get_mock_response(system_content: str) -> str:
             
             # Fetch directions
             directions_day1 = ""
-            instructions_day1 = get_clean_directions("Kyoto Station", "Fushimi Inari Shrine, Kyoto")
+            instructions_day1 = get_clean_directions("Kyoto Station", "Fushimi Inari Shrine, Kyoto", language)
             if instructions_day1:
                 directions_day1 = "\n\n**🚗 Driving Directions (Kyoto Station to Fushimi Inari Shrine):**\n" + "\n".join(f"- {inst}" for inst in instructions_day1[:3])
             day1_body += directions_day1
 
             directions_day2 = ""
-            instructions_day2 = get_clean_directions("Kyoto Station", "Arashiyama Bamboo Grove, Kyoto")
+            instructions_day2 = get_clean_directions("Kyoto Station", "Arashiyama Bamboo Grove, Kyoto", language)
             if instructions_day2:
                 directions_day2 = "\n\n**🚗 Driving Directions (Kyoto Station to Arashiyama Bamboo Grove):**\n" + "\n".join(f"- {inst}" for inst in instructions_day2[:3])
             day2_body += directions_day2
 
             directions_day3 = ""
-            instructions_day3 = get_clean_directions("Fushimi Inari Shrine, Kyoto", "Kiyomizu-dera, Kyoto")
+            instructions_day3 = get_clean_directions("Fushimi Inari Shrine, Kyoto", "Kiyomizu-dera, Kyoto", language)
             if instructions_day3:
                 directions_day3 = "\n\n**🚗 Driving Directions (Fushimi Inari to Kiyomizu-dera):**\n" + "\n".join(f"- {inst}" for inst in instructions_day3[:3])
             day3_body += directions_day3
             
-            return f"""{title_formatted}
+            return f"""{warning_banner}{title_formatted}
 
 ---
 
@@ -893,10 +1212,14 @@ def get_mock_response(system_content: str) -> str:
                 lunch_food = culinary[(d - 1) % len(culinary)]
                 evening_food = culinary[d % len(culinary)]
                 
+                # Fetch fact-checked costs for attractions
+                cost_morning = get_fact_checked_activity_cost(morning_spot, val_morning_act, sym, rate)
+                cost_afternoon = get_fact_checked_activity_cost(afternoon_spot, val_afternoon_act, sym, rate)
+                
                 # Fetch localized text items
                 localized_items = get_itinerary_day_template(
                     language, morning_spot, lunch_food, afternoon_spot, evening_spot, evening_food,
-                    sym, val_morning_act, val_lunch, val_afternoon_act, val_evening_din
+                    sym, cost_morning, val_lunch, cost_afternoon, val_evening_din
                 )
                 
                 day_title_prefix = t["day_label"].format(d=d)
@@ -905,7 +1228,7 @@ def get_mock_response(system_content: str) -> str:
                 
                 directions_gen = ""
                 if d == 1 and len(attractions) >= 2:
-                    instructions_gen = get_clean_directions(f"{destination} Airport", f"{morning_spot}, {destination}")
+                    instructions_gen = get_clean_directions(f"{destination} Airport", f"{morning_spot}, {destination}", language)
                     if instructions_gen:
                         directions_gen = f"\n\n**🚗 Driving Directions (Airport to {morning_spot}):**\n" + "\n".join(f"- {inst}" for inst in instructions_gen[:3])
                 
@@ -925,7 +1248,7 @@ def get_mock_response(system_content: str) -> str:
                              "- [ ] స్థానిక రవాణా పాస్ పొందండి.\n- [ ] ఉదయపు పర్యటనలు బుక్ చేసుకోండి.\n- [ ] ఆఫ్ లైన్ మ్యాప్స్ డౌన్ లోడ్ చేయండి.\n- [ ] లోకల్ ప్లగ్ అడాప్టర్ సిద్ధం చేసుకోండి." if language == "Telugu" else \
                              "- [ ] Download local transit passes.\n- [ ] Book tickets for morning excursions.\n- [ ] Save offline map guides.\n- [ ] Pack local socket plug adapter."
                              
-            return f"""{title_formatted}
+            return f"""{warning_banner}{title_formatted}
 
 ---
 

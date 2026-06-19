@@ -658,6 +658,13 @@ function initApp() {
       activateTab('tab-itinerary');
     }
   }
+
+  // Handle window resize to invalidate leaflet map size dynamically
+  window.addEventListener('resize', () => {
+    if (mapMode === 'leaflet' && leafletMap) {
+      leafletMap.invalidateSize();
+    }
+  });
 }
 
 if (document.readyState === 'loading') {
