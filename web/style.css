@@ -949,43 +949,100 @@ body {
 
 /* Print Styles for PDF Export */
 @media print {
+  /* Hide the entire background decorations, header, form panels, map, and status overlays */
+  #error-boundary-banner,
+  .app-header,
+  .input-panel,
+  .workflow-card,
+  .map-card,
+  .output-tabs,
+  .placeholder-content,
+  .execution-banner,
   .itinerary-actions {
     display: none !important;
   }
-  
+
   body {
     background: #ffffff !important;
+    background-image: none !important;
     color: #0f172a !important;
+    padding: 0 !important;
+    margin: 0 !important;
   }
-  
+
+  /* Reset layout constraints for printing */
+  .app-container,
+  .app-grid,
+  .dashboard-panel,
+  .outputs-container,
+  .output-panel-card,
+  .tab-contents {
+    display: block !important;
+    max-height: none !important;
+    overflow: visible !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    border: none !important;
+    box-shadow: none !important;
+    background: none !important;
+    backdrop-filter: none !important;
+  }
+
+  /* Only display the active final itinerary tab content and hide others */
+  .tab-content {
+    display: none !important;
+  }
+
+  .tab-content#tab-itinerary {
+    display: block !important;
+    overflow: visible !important;
+    height: auto !important;
+  }
+
   .rendered-markdown {
     color: #0f172a !important;
     background: #ffffff !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    box-shadow: none !important;
+    width: 100% !important;
   }
 
   .rendered-markdown h1 {
     color: #0f172a !important;
-    border-bottom: 2px solid #e2e8f0 !important;
-    font-size: 20pt !important;
+    border-bottom: 2px solid #cbd5e1 !important;
+    font-size: 22pt !important;
+    margin-bottom: 15pt !important;
+    padding-bottom: 6pt !important;
   }
   
   .rendered-markdown h2 {
     color: #1e3a8a !important;
     font-size: 16pt !important;
-    margin-top: 15pt !important;
+    margin-top: 20pt !important;
+    margin-bottom: 8pt !important;
+    page-break-after: avoid;
   }
   
   .rendered-markdown h3 {
     color: #2563eb !important;
     font-size: 13pt !important;
+    margin-top: 15pt !important;
+    margin-bottom: 6pt !important;
+    page-break-after: avoid;
   }
 
   .rendered-markdown h4 {
     color: #1e40af !important;
     background: #f1f5f9 !important;
     border-left: 3px solid #2563eb !important;
-    padding: 4px 8px !important;
+    padding: 6px 12px !important;
+    margin-top: 12pt !important;
+    margin-bottom: 6pt !important;
     font-size: 11pt !important;
+    display: block !important;
+    width: 100% !important;
+    page-break-after: avoid;
   }
 
   .rendered-markdown p, 
@@ -999,80 +1056,24 @@ body {
     background-color: #f1f5f9 !important;
     color: #0f172a !important;
     border-bottom: 2px solid #cbd5e1 !important;
+    font-weight: 600 !important;
   }
 
   .rendered-markdown code {
     background-color: #f8fafc !important;
     color: #0f172a !important;
     border: 1px solid #e2e8f0 !important;
+    font-size: 9.5pt !important;
   }
-}
 
-/* Printing Class Helper Styles */
-.rendered-markdown.printing {
-  color: #0f172a !important;
-  background: #ffffff !important;
-  padding: 30px !important;
-  border-radius: 8px !important;
-  box-shadow: none !important;
-}
+  .rendered-markdown table {
+    display: table !important;
+    width: 100% !important;
+    overflow-x: visible !important;
+  }
 
-.rendered-markdown.printing * {
-  color: #334155 !important;
-}
-
-.rendered-markdown.printing h1 {
-  color: #0f172a !important;
-  border-bottom: 2px solid #e2e8f0 !important;
-  font-size: 20pt !important;
-  margin-bottom: 12pt !important;
-  padding-bottom: 6pt !important;
-}
-
-.rendered-markdown.printing h2 {
-  color: #1e3a8a !important;
-  font-size: 16pt !important;
-  margin-top: 18pt !important;
-  margin-bottom: 8pt !important;
-}
-
-.rendered-markdown.printing h3 {
-  color: #2563eb !important;
-  font-size: 13pt !important;
-  margin-top: 14pt !important;
-  margin-bottom: 6pt !important;
-}
-
-.rendered-markdown.printing h4 {
-  color: #1e40af !important;
-  background: #f1f5f9 !important;
-  border-left: 3px solid #2563eb !important;
-  padding: 6px 12px !important;
-  margin-top: 12pt !important;
-  margin-bottom: 6pt !important;
-  font-size: 11pt !important;
-  display: block !important;
-  width: 100% !important;
-}
-
-.rendered-markdown.printing p, 
-.rendered-markdown.printing li, 
-.rendered-markdown.printing td {
-  color: #334155 !important;
-  font-size: 10.5pt !important;
-}
-
-.rendered-markdown.printing th {
-  background-color: #f1f5f9 !important;
-  color: #0f172a !important;
-  border-bottom: 2px solid #cbd5e1 !important;
-  font-weight: 600 !important;
-}
-
-.rendered-markdown.printing code {
-  background-color: #f8fafc !important;
-  color: #0f172a !important;
-  border: 1px solid #e2e8f0 !important;
-  font-size: 9.5pt !important;
+  .rendered-markdown tr {
+    page-break-inside: avoid !important;
+  }
 }
 
