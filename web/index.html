@@ -42,9 +42,25 @@
         <i data-lucide="plane-takeoff" class="logo-icon"></i>
         <span>AeroPlan <span class="accent-text">AI</span></span>
       </div>
-      <div class="status-indicator" id="api-status">
-        <span class="status-dot"></span>
-        <span class="status-label">Simulation Mode</span>
+      <div class="header-right" style="display: flex; align-items: center; gap: 1rem;">
+        <div class="status-indicator" id="api-status">
+          <span class="status-dot"></span>
+          <span class="status-label">Simulation Mode</span>
+        </div>
+        <div class="user-auth-widget" id="user-auth-widget">
+          <!-- When Logged Out -->
+          <button type="button" id="header-login-btn" class="auth-trigger-btn">
+            <i data-lucide="user"></i> <span>Log In</span>
+          </button>
+          <!-- When Logged In -->
+          <div class="user-profile-menu" id="user-profile-menu" style="display: none;">
+            <div class="profile-avatar" id="profile-avatar">U</div>
+            <span class="user-email-display" id="user-email-display"></span>
+            <button type="button" id="header-logout-btn" class="logout-btn" title="Log Out">
+              <i data-lucide="log-out"></i>
+            </button>
+          </div>
+        </div>
       </div>
     </header>
 
@@ -243,11 +259,17 @@
               <button class="tab-btn" data-tab="tab-budget" type="button">
                 <i data-lucide="pie-chart"></i> Budget Breakdown
               </button>
+              <button class="tab-btn" data-tab="tab-saved-trips" type="button">
+                <i data-lucide="folder-heart"></i> My Saved Trips
+              </button>
             </div>
 
             <div class="tab-contents">
               <div class="tab-content active" id="tab-itinerary">
                 <div class="itinerary-actions" id="itinerary-actions" style="display: none; justify-content: flex-end; gap: 0.75rem; margin-bottom: 1.25rem; border-bottom: 1px solid rgba(255,255,255,0.06); padding-bottom: 0.75rem;">
+                  <button type="button" id="save-trip-btn" class="primary-btn" style="font-size: 0.85rem; padding: 0.5rem 1rem; display: flex; align-items: center; gap: 0.35rem; background: linear-gradient(135deg, var(--accent-green), var(--accent-blue)); box-shadow: 0 4px 12px rgba(16, 185, 129, 0.25);">
+                    <i data-lucide="bookmark" style="width: 14px; height: 14px;"></i> Save Trip
+                  </button>
                   <button type="button" id="export-pdf-btn" class="secondary-btn" style="font-size: 0.85rem; padding: 0.5rem 0.85rem; display: flex; align-items: center; gap: 0.35rem;">
                     <i data-lucide="download" style="width: 14px; height: 14px;"></i> Export PDF
                   </button>
@@ -277,12 +299,162 @@
                 </div>
                 <div class="rendered-markdown" id="budget-rendered"></div>
               </div>
+
+              <div class="tab-content" id="tab-saved-trips">
+                <!-- Logged Out View -->
+                <div class="placeholder-content" id="saved-trips-logged-out">
+                  <i data-lucide="lock" class="placeholder-icon" style="stroke-width: 1.5; color: var(--accent-purple); filter: drop-shadow(0 0 8px rgba(168, 85, 247, 0.3));"></i>
+                  <h3>Access Your Saved Trips</h3>
+                  <p>Log in or sign up to save your generated travel plans, manage your trips, and view them anytime.</p>
+                  <button type="button" class="primary-btn" id="dashboard-login-btn" style="margin-top: 1rem; padding: 0.75rem 1.5rem;">
+                    <span>Log In / Sign Up</span>
+                    <i data-lucide="user"></i>
+                  </button>
+                </div>
+                
+                <!-- Logged In View -->
+                <div id="saved-trips-logged-in" style="display: none; height: 100%;">
+                  <div class="dashboard-header" style="display: flex; justify-content: space-between; align-items: center; padding-bottom: 0.75rem; border-bottom: 1px solid var(--border-color); margin-bottom: 1.25rem;">
+                    <div>
+                      <h3 style="font-family: var(--font-alt); font-size: 1.1rem; font-weight: 600; color: var(--accent-cyan);" id="dashboard-welcome-msg">Saved Trips</h3>
+                      <span style="font-size: 0.8rem; color: var(--text-muted);" id="dashboard-trips-count">0 trips saved</span>
+                    </div>
+                    <button type="button" class="secondary-btn" id="dashboard-refresh-btn" style="padding: 0.5rem; border-radius: 6px;">
+                      <i data-lucide="refresh-cw" style="width: 14px; height: 14px;"></i>
+                    </button>
+                  </div>
+                  
+                  <div class="trips-grid" id="trips-grid">
+                    <!-- Cards will be populated here -->
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
         </div>
       </section>
     </main>
   </div>
+
+  <!-- Authentication Modal -->
+  <div class="modal-overlay" id="auth-modal" style="display: none;">
+    <div class="modal-card">
+      <button class="modal-close" id="auth-modal-close"><i data-lucide="x"></i></button>
+      
+      <div class="modal-tabs">
+        <button class="modal-tab active" id="modal-tab-login" type="button">Log In</button>
+        <button class="modal-tab" id="modal-tab-signup" type="button">Sign Up</button>
+      </div>
+
+      <!-- Login form -->
+      <form id="login-form" class="auth-form">
+        <div class="form-group">
+          <label for="login-email">Email Address</label>
+          <div class="input-wrapper">
+            <i data-lucide="mail" class="input-icon"></i>
+            <input type="email" id="login-email" required placeholder="name@example.com" autocomplete="username">
+          </div>
+        </div>
+        <div class="form-group">
+          <label for="login-password">Password</label>
+          <div class="input-wrapper">
+            <i data-lucide="lock" class="input-icon"></i>
+            <input type="password" id="login-password" required placeholder="••••••••" autocomplete="current-password">
+            <button type="button" class="password-toggle-btn" id="login-pwd-toggle">
+              <i data-lucide="eye" style="width: 16px; height: 16px;"></i>
+            </button>
+          </div>
+        </div>
+        <div class="auth-error-msg" id="login-error-msg"></div>
+        <button type="submit" class="primary-btn auth-submit-btn">
+          <span>Log In</span>
+          <i data-lucide="log-in"></i>
+        </button>
+        <div class="social-divider"><span>or continue with</span></div>
+        <div class="social-buttons">
+          <button type="button" class="social-btn google-btn" id="login-google-mock">
+            <svg viewBox="0 0 24 24" width="16" height="16" style="margin-right: 0.25rem;"><path fill="#EA4335" d="M12.24 10.285V14.4h6.887c-.648 2.41-2.519 4.114-5.136 4.114A5.99 5.99 0 0 1 8 12.5a5.99 5.99 0 0 1 5.99-6.015c1.65 0 3.13.67 4.21 1.76l3.154-3.153C19.223 3.01 16.793 2 13.99 2 8.134 2 3.385 6.75 3.385 12.605c0 5.855 4.749 10.605 10.605 10.605 6.29 0 10.225-4.42 10.225-10.425 0-.71-.08-1.215-.225-1.5H12.24Z"/></svg>
+            Google
+          </button>
+          <button type="button" class="social-btn github-btn" id="login-github-mock">
+            <i data-lucide="github" style="width: 16px; height: 16px; margin-right: 0.25rem;"></i>
+            GitHub
+          </button>
+        </div>
+      </form>
+
+      <!-- Signup form -->
+      <form id="signup-form" class="auth-form" style="display: none;">
+        <div class="form-group">
+          <label for="signup-email">Email Address</label>
+          <div class="input-wrapper">
+            <i data-lucide="mail" class="input-icon"></i>
+            <input type="email" id="signup-email" required placeholder="name@example.com" autocomplete="username">
+          </div>
+        </div>
+        <div class="form-group">
+          <label for="signup-password">Password</label>
+          <div class="input-wrapper">
+            <i data-lucide="lock" class="input-icon"></i>
+            <input type="password" id="signup-password" required placeholder="•••••••• (Min 6 characters)" autocomplete="new-password">
+            <button type="button" class="password-toggle-btn" id="signup-pwd-toggle">
+              <i data-lucide="eye" style="width: 16px; height: 16px;"></i>
+            </button>
+          </div>
+        </div>
+        <div class="form-group">
+          <label for="signup-confirm-password">Confirm Password</label>
+          <div class="input-wrapper">
+            <i data-lucide="lock" class="input-icon"></i>
+            <input type="password" id="signup-confirm-password" required placeholder="••••••••" autocomplete="new-password">
+            <button type="button" class="password-toggle-btn" id="signup-confirm-pwd-toggle">
+              <i data-lucide="eye" style="width: 16px; height: 16px;"></i>
+            </button>
+          </div>
+        </div>
+        <div class="auth-error-msg" id="signup-error-msg"></div>
+        <button type="submit" class="primary-btn auth-submit-btn">
+          <span>Create Account</span>
+          <i data-lucide="user-plus"></i>
+        </button>
+        <div class="social-divider"><span>or continue with</span></div>
+        <div class="social-buttons">
+          <button type="button" class="social-btn google-btn" id="signup-google-mock">
+            <svg viewBox="0 0 24 24" width="16" height="16" style="margin-right: 0.25rem;"><path fill="#EA4335" d="M12.24 10.285V14.4h6.887c-.648 2.41-2.519 4.114-5.136 4.114A5.99 5.99 0 0 1 8 12.5a5.99 5.99 0 0 1 5.99-6.015c1.65 0 3.13.67 4.21 1.76l3.154-3.153C19.223 3.01 16.793 2 13.99 2 8.134 2 3.385 6.75 3.385 12.605c0 5.855 4.749 10.605 10.605 10.605 6.29 0 10.225-4.42 10.225-10.425 0-.71-.08-1.215-.225-1.5H12.24Z"/></svg>
+            Google
+          </button>
+          <button type="button" class="social-btn github-btn" id="signup-github-mock">
+            <i data-lucide="github" style="width: 16px; height: 16px; margin-right: 0.25rem;"></i>
+            GitHub
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Trip Name Save Modal -->
+  <div class="modal-overlay" id="save-trip-modal" style="display: none;">
+    <div class="modal-card" style="max-width: 400px; padding: 2rem;">
+      <button class="modal-close" id="save-trip-modal-close"><i data-lucide="x"></i></button>
+      <h3 style="font-family: var(--font-alt); margin-bottom: 0.5rem; color: var(--accent-cyan);">Name Your Trip</h3>
+      <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 1.25rem;">Provide a memorable name for this itinerary to save it to your dashboard.</p>
+      
+      <form id="save-trip-form">
+        <div class="form-group" style="margin-bottom: 1.5rem;">
+          <label for="save-trip-name">Trip Name</label>
+          <div class="input-wrapper">
+            <i data-lucide="pencil" class="input-icon"></i>
+            <input type="text" id="save-trip-name" required placeholder="e.g. Kyoto Cherry Blossom Trip">
+          </div>
+        </div>
+        <button type="submit" class="primary-btn" style="width: 100%;">
+          <span>Save to Dashboard</span>
+          <i data-lucide="check"></i>
+        </button>
+      </form>
+    </div>
+  </div>
+
   <script src="script.js?v=1.3"></script>
 </body>
 </html>

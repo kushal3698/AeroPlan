@@ -11,6 +11,16 @@ function initApp() {
   let googleMap;
   let googleMarkers = [];
   let rawItineraryMarkdown = '';
+  
+  // Auth and trips state
+  let currentUser = null;
+  let savedTripsList = [];
+  let lastItineraryData = {
+    final_itinerary: '',
+    research_notes: '',
+    budget_notes: ''
+  };
+  let backendSupportsDB = true;
 
   const googleDarkThemeStyles = [
     { elementType: "geometry", stylers: [{ color: "#172237" }] },
@@ -233,6 +243,8 @@ function initApp() {
         apiStatus.classList.remove('live');
         statusLabel.textContent = 'Simulation Mode';
       }
+      
+      backendSupportsDB = data.is_db_persistent === true;
 
       // Load Google Maps API if key exists, otherwise fall back to Leaflet
       if (data.google_maps_api_key && data.google_maps_api_key.trim() && !data.google_maps_api_key.startsWith("your_")) {
@@ -252,6 +264,7 @@ function initApp() {
     })
     .catch(() => {
       statusLabel.textContent = 'Offline';
+      backendSupportsDB = false;
       initLeaflet();
     });
 
@@ -468,6 +481,19 @@ function initApp() {
     submitBtn.disabled = true;
     resetGraph();
 
+    // Reset Save Trip button
+    const saveTripBtn = document.getElementById('save-trip-btn');
+    if (saveTripBtn) {
+      saveTripBtn.innerHTML = '<i data-lucide="bookmark" style="width: 14px; height: 14px;"></i> Save Trip';
+      saveTripBtn.disabled = false;
+    }
+
+    lastItineraryData = {
+      final_itinerary: '',
+      research_notes: '',
+      budget_notes: ''
+    };
+
     // Clear previous outputs
     itineraryRendered.innerHTML = '';
     itineraryPlaceholder.style.display = 'flex';
@@ -638,14 +664,24 @@ function initApp() {
 
   // Render markdown outputs to respective tabs and auto-switch focus
   function displayNodeOutput(node, data) {
+    if (!lastItineraryData) {
+      lastItineraryData = {
+        final_itinerary: '',
+        research_notes: '',
+        budget_notes: ''
+      };
+    }
+    
     if (node === 'researcher') {
       const notes = data.research_notes;
+      lastItineraryData.research_notes = notes;
       researchPlaceholder.style.display = 'none';
       researchRendered.innerHTML = marked.parse(notes);
       activateTab('tab-research');
     } 
     else if (node === 'budget') {
       const budget = data.budget_notes;
+      lastItineraryData.budget_notes = budget;
       budgetPlaceholder.style.display = 'none';
       budgetRendered.innerHTML = marked.parse(budget);
       activateTab('tab-budget');
@@ -653,6 +689,7 @@ function initApp() {
     else if (node === 'planner') {
       const itinerary = data.final_itinerary;
       rawItineraryMarkdown = itinerary;
+      lastItineraryData.final_itinerary = itinerary;
       itineraryPlaceholder.style.display = 'none';
       itineraryRendered.innerHTML = marked.parse(itinerary);
       activateTab('tab-itinerary');
@@ -665,6 +702,649 @@ function initApp() {
       leafletMap.invalidateSize();
     }
   });
+
+  // ==========================================================================
+  // CLIENT STORAGE & AUTH HELPERS (LOCAL STORAGE MOCK FALLBACK)
+  // ==========================================================================
+  
+  // Simple hashing helper for local browser DB fallback
+  function localHash(str) {
+    let hash = 0;
+    for (let i = 0; i < str.length; i++) {
+      hash = (hash << 5) - hash + str.charCodeAt(i);
+      hash |= 0;
+    }
+    return Math.abs(hash).toString(16);
+  }
+
+  function getLocalUsers() {
+    return JSON.parse(localStorage.getItem('aeroplan_local_users') || '{}');
+  }
+
+  function saveLocalUsers(users) {
+    localStorage.setItem('aeroplan_local_users', JSON.stringify(users));
+  }
+
+  function getLocalTrips() {
+    return JSON.parse(localStorage.getItem('aeroplan_local_trips') || '[]');
+  }
+
+  function saveLocalTrips(trips) {
+    localStorage.setItem('aeroplan_local_trips', JSON.stringify(trips));
+  }
+
+  // Auth Operations
+  async function apiSignup(email, password) {
+    email = email.trim().toLowerCase();
+    if (!backendSupportsDB) {
+      const users = getLocalUsers();
+      if (users[email]) {
+        throw new Error("An account with this email already exists");
+      }
+      users[email] = {
+        password_hash: localHash(password),
+        created_at: new Date().toISOString()
+      };
+      saveLocalUsers(users);
+      return { token: `local_token_${localHash(email)}`, email };
+    }
+
+    try {
+      const r = await fetch(BACKEND_URL + '/api/auth/signup', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password })
+      });
+      const data = await r.json();
+      if (!r.ok) throw new Error(data.detail || 'Signup failed');
+      return data;
+    } catch (err) {
+      console.warn("Backend signup failed, falling back to local database:", err);
+      backendSupportsDB = false;
+      return apiSignup(email, password);
+    }
+  }
+
+  async function apiLogin(email, password) {
+    email = email.trim().toLowerCase();
+    if (!backendSupportsDB) {
+      const users = getLocalUsers();
+      if (!users[email] || users[email].password_hash !== localHash(password)) {
+        throw new Error("Invalid email or password");
+      }
+      return { token: `local_token_${localHash(email)}`, email };
+    }
+
+    try {
+      const r = await fetch(BACKEND_URL + '/api/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password })
+      });
+      const data = await r.json();
+      if (!r.ok) throw new Error(data.detail || 'Login failed');
+      return data;
+    } catch (err) {
+      console.warn("Backend login failed, falling back to local database:", err);
+      const users = getLocalUsers();
+      if (users[email] && users[email].password_hash === localHash(password)) {
+        backendSupportsDB = false;
+        return { token: `local_token_${localHash(email)}`, email };
+      }
+      throw err;
+    }
+  }
+
+  async function apiGetTrips() {
+    if (!currentUser) return [];
+    if (!backendSupportsDB) {
+      const trips = getLocalTrips();
+      return trips.filter(t => t.user_email === currentUser.email);
+    }
+
+    try {
+      const r = await fetch(BACKEND_URL + '/api/trips', {
+        headers: { 'Authorization': `Bearer ${currentUser.token}` }
+      });
+      const data = await r.json();
+      if (!r.ok) throw new Error(data.detail || 'Failed to fetch trips');
+      return data.trips;
+    } catch (err) {
+      console.warn("Backend fetch trips failed, falling back to local storage:", err);
+      const trips = getLocalTrips();
+      return trips.filter(t => t.user_email === currentUser.email);
+    }
+  }
+
+  async function apiSaveTrip(tripName, reqData, itineraryData) {
+    if (!currentUser) throw new Error("Must be logged in to save trips");
+    
+    const interests = [];
+    interestsContainer.querySelectorAll('input[type="checkbox"]').forEach(cb => {
+      if (cb.checked) interests.push(cb.value);
+    });
+
+    const tripObj = {
+      trip_name: tripName,
+      destination: reqData.destination,
+      duration_days: reqData.duration_days,
+      budget_limit: reqData.budget_limit,
+      currency: reqData.currency,
+      language: reqData.language,
+      interests: interests,
+      itinerary_data: itineraryData
+    };
+
+    if (!backendSupportsDB) {
+      const trips = getLocalTrips();
+      const newTrip = {
+        ...tripObj,
+        id: `local_trip_${Date.now()}_${Math.random().toString(36).substr(2, 5)}`,
+        user_email: currentUser.email,
+        created_at: new Date().toISOString()
+      };
+      trips.push(newTrip);
+      saveLocalTrips(trips);
+      return newTrip;
+    }
+
+    try {
+      const r = await fetch(BACKEND_URL + '/api/trips', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${currentUser.token}`
+        },
+        body: JSON.stringify(tripObj)
+      });
+      const data = await r.json();
+      if (!r.ok) throw new Error(data.detail || 'Failed to save trip');
+      return data.trip;
+    } catch (err) {
+      console.warn("Backend save trip failed, falling back to local storage:", err);
+      const trips = getLocalTrips();
+      const newTrip = {
+        ...tripObj,
+        id: `local_trip_${Date.now()}_${Math.random().toString(36).substr(2, 5)}`,
+        user_email: currentUser.email,
+        created_at: new Date().toISOString()
+      };
+      trips.push(newTrip);
+      saveLocalTrips(trips);
+      return newTrip;
+    }
+  }
+
+  async function apiRenameTrip(tripId, newName) {
+    if (!currentUser) return;
+    if (!backendSupportsDB || tripId.startsWith('local_')) {
+      const trips = getLocalTrips();
+      const trip = trips.find(t => t.id === tripId && t.user_email === currentUser.email);
+      if (trip) {
+        trip.trip_name = newName;
+        saveLocalTrips(trips);
+      }
+      return;
+    }
+
+    try {
+      const r = await fetch(BACKEND_URL + `/api/trips/${tripId}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${currentUser.token}`
+        },
+        body: JSON.stringify({ trip_name: newName })
+      });
+      if (!r.ok) {
+        const data = await r.json();
+        throw new Error(data.detail || 'Failed to rename trip');
+      }
+    } catch (err) {
+      console.warn("Backend rename trip failed, performing local rename:", err);
+      const trips = getLocalTrips();
+      const trip = trips.find(t => t.id === tripId && t.user_email === currentUser.email);
+      if (trip) {
+        trip.trip_name = newName;
+        saveLocalTrips(trips);
+      }
+    }
+  }
+
+  async function apiDeleteTrip(tripId) {
+    if (!currentUser) return;
+    if (!backendSupportsDB || tripId.startsWith('local_')) {
+      const trips = getLocalTrips();
+      const filtered = trips.filter(t => !(t.id === tripId && t.user_email === currentUser.email));
+      saveLocalTrips(filtered);
+      return;
+    }
+
+    try {
+      const r = await fetch(BACKEND_URL + `/api/trips/${tripId}`, {
+        method: 'DELETE',
+        headers: { 'Authorization': `Bearer ${currentUser.token}` }
+      });
+      if (!r.ok) {
+        const data = await r.json();
+        throw new Error(data.detail || 'Failed to delete trip');
+      }
+    } catch (err) {
+      console.warn("Backend delete trip failed, performing local delete:", err);
+      const trips = getLocalTrips();
+      const filtered = trips.filter(t => !(t.id === tripId && t.user_email === currentUser.email));
+      saveLocalTrips(filtered);
+    }
+  }
+
+  // ==========================================================================
+  // AUTH UI INTERACTION LOGIC
+  // ==========================================================================
+  
+  // Auth Elements Selectors
+  const authModal = document.getElementById('auth-modal');
+  const authModalClose = document.getElementById('auth-modal-close');
+  const headerLoginBtn = document.getElementById('header-login-btn');
+  const userProfileMenu = document.getElementById('user-profile-menu');
+  const userEmailDisplay = document.getElementById('user-email-display');
+  const profileAvatar = document.getElementById('profile-avatar');
+  const headerLogoutBtn = document.getElementById('header-logout-btn');
+  const dashboardLoginBtn = document.getElementById('dashboard-login-btn');
+  
+  const modalTabLogin = document.getElementById('modal-tab-login');
+  const modalTabSignup = document.getElementById('modal-tab-signup');
+  const loginForm = document.getElementById('login-form');
+  const signupForm = document.getElementById('signup-form');
+  
+  const loginErrorMsg = document.getElementById('login-error-msg');
+  const signupErrorMsg = document.getElementById('signup-error-msg');
+  
+  const loginPwdToggle = document.getElementById('login-pwd-toggle');
+  const signupPwdToggle = document.getElementById('signup-pwd-toggle');
+  const signupConfirmPwdToggle = document.getElementById('signup-confirm-pwd-toggle');
+
+  // Trip Naming Modal Elements
+  const saveTripModal = document.getElementById('save-trip-modal');
+  const saveTripModalClose = document.getElementById('save-trip-modal-close');
+  const saveTripForm = document.getElementById('save-trip-form');
+  const saveTripNameInput = document.getElementById('save-trip-name');
+  const saveTripBtn = document.getElementById('save-trip-btn');
+  
+  // Saved Trips Dashboard Elements
+  const savedTripsLoggedOut = document.getElementById('saved-trips-logged-out');
+  const savedTripsLoggedIn = document.getElementById('saved-trips-logged-in');
+  const tripsGrid = document.getElementById('trips-grid');
+  const dashboardWelcomeMsg = document.getElementById('dashboard-welcome-msg');
+  const dashboardTripsCount = document.getElementById('dashboard-trips-count');
+  const dashboardRefreshBtn = document.getElementById('dashboard-refresh-btn');
+
+  function updateAuthUI() {
+    if (currentUser) {
+      headerLoginBtn.style.display = 'none';
+      userProfileMenu.style.display = 'flex';
+      userEmailDisplay.textContent = currentUser.email;
+      profileAvatar.textContent = currentUser.email.charAt(0).toUpperCase();
+      
+      savedTripsLoggedOut.style.display = 'none';
+      savedTripsLoggedIn.style.display = 'block';
+      dashboardWelcomeMsg.textContent = `Saved Trips`;
+      
+      if (saveTripBtn) {
+        saveTripBtn.innerHTML = '<i data-lucide="bookmark" style="width: 14px; height: 14px;"></i> Save Trip';
+        saveTripBtn.disabled = false;
+      }
+      
+      loadDashboardTrips();
+    } else {
+      headerLoginBtn.style.display = 'flex';
+      userProfileMenu.style.display = 'none';
+      
+      savedTripsLoggedOut.style.display = 'flex';
+      savedTripsLoggedIn.style.display = 'none';
+      
+      tripsGrid.innerHTML = '';
+    }
+    lucide.createIcons();
+  }
+
+  function setCurrentUser(user) {
+    currentUser = user;
+    if (user) {
+      localStorage.setItem('aeroplan_user', JSON.stringify(user));
+    } else {
+      localStorage.removeItem('aeroplan_user');
+    }
+    updateAuthUI();
+  }
+
+  // Modal Actions
+  function openAuthModal(tabMode = 'login') {
+    authModal.style.display = 'flex';
+    switchAuthTab(tabMode);
+    loginErrorMsg.style.display = 'none';
+    signupErrorMsg.style.display = 'none';
+  }
+
+  function closeAuthModal() {
+    authModal.style.display = 'none';
+    loginForm.reset();
+    signupForm.reset();
+  }
+
+  function switchAuthTab(tabMode) {
+    if (tabMode === 'login') {
+      modalTabLogin.classList.add('active');
+      modalTabSignup.classList.remove('active');
+      loginForm.style.display = 'flex';
+      signupForm.style.display = 'none';
+    } else {
+      modalTabLogin.classList.remove('active');
+      modalTabSignup.classList.add('active');
+      loginForm.style.display = 'none';
+      signupForm.style.display = 'flex';
+    }
+  }
+
+  // Password Visibility helper
+  function wirePwdToggle(btn, input) {
+    if (btn && input) {
+      btn.addEventListener('click', () => {
+        const type = input.getAttribute('type') === 'password' ? 'text' : 'password';
+        input.setAttribute('type', type);
+        const icon = btn.querySelector('i');
+        if (type === 'text') {
+          icon.setAttribute('data-lucide', 'eye-off');
+        } else {
+          icon.setAttribute('data-lucide', 'eye');
+        }
+        lucide.createIcons();
+      });
+    }
+  }
+
+  // Wire auth controls
+  headerLoginBtn.addEventListener('click', () => openAuthModal('login'));
+  if (dashboardLoginBtn) dashboardLoginBtn.addEventListener('click', () => openAuthModal('login'));
+  authModalClose.addEventListener('click', closeAuthModal);
+  authModal.addEventListener('click', (e) => { if (e.target === authModal) closeAuthModal(); });
+  
+  modalTabLogin.addEventListener('click', () => switchAuthTab('login'));
+  modalTabSignup.addEventListener('click', () => switchAuthTab('signup'));
+  
+  wirePwdToggle(loginPwdToggle, document.getElementById('login-password'));
+  wirePwdToggle(signupPwdToggle, document.getElementById('signup-password'));
+  wirePwdToggle(signupConfirmPwdToggle, document.getElementById('signup-confirm-password'));
+
+  // Submit Handlers
+  loginForm.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    loginErrorMsg.style.display = 'none';
+    const email = document.getElementById('login-email').value;
+    const pass = document.getElementById('login-password').value;
+    try {
+      const user = await apiLogin(email, pass);
+      setCurrentUser(user);
+      closeAuthModal();
+    } catch (err) {
+      loginErrorMsg.textContent = err.message;
+      loginErrorMsg.style.display = 'block';
+    }
+  });
+
+  signupForm.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    signupErrorMsg.style.display = 'none';
+    const email = document.getElementById('signup-email').value;
+    const pass = document.getElementById('signup-password').value;
+    const confirmPass = document.getElementById('signup-confirm-password').value;
+    if (pass !== confirmPass) {
+      signupErrorMsg.textContent = "Passwords do not match";
+      signupErrorMsg.style.display = 'block';
+      return;
+    }
+    if (pass.length < 6) {
+      signupErrorMsg.textContent = "Password must be at least 6 characters";
+      signupErrorMsg.style.display = 'block';
+      return;
+    }
+    try {
+      const user = await apiSignup(email, pass);
+      setCurrentUser(user);
+      closeAuthModal();
+    } catch (err) {
+      signupErrorMsg.textContent = err.message;
+      signupErrorMsg.style.display = 'block';
+    }
+  });
+
+  headerLogoutBtn.addEventListener('click', () => {
+    if (confirm("Are you sure you want to log out?")) {
+      setCurrentUser(null);
+    }
+  });
+
+  // Mock OAuth logins
+  const mockOAuth = (provider) => {
+    const email = `mock_${provider.toLowerCase()}_user@gmail.com`;
+    const user = { token: `mock_oauth_token_${Date.now()}`, email };
+    setCurrentUser(user);
+    closeAuthModal();
+    alert(`Logged in successfully via Mock ${provider}!`);
+  };
+
+  document.getElementById('login-google-mock').addEventListener('click', () => mockOAuth('Google'));
+  document.getElementById('login-github-mock').addEventListener('click', () => mockOAuth('GitHub'));
+  document.getElementById('signup-google-mock').addEventListener('click', () => mockOAuth('Google'));
+  document.getElementById('signup-github-mock').addEventListener('click', () => mockOAuth('GitHub'));
+
+  // ==========================================================================
+  // TRIP STORAGE INTERACTION LOGIC
+  // ==========================================================================
+  
+  async function loadDashboardTrips() {
+    tripsGrid.innerHTML = '<div class="placeholder-content" style="min-height: 120px; grid-column: 1/-1;"><i data-lucide="loader" class="placeholder-icon rotate-animation"></i><p>Retrieving your travel history...</p></div>';
+    lucide.createIcons();
+    try {
+      savedTripsList = await apiGetTrips();
+      renderSavedTrips(savedTripsList);
+    } catch (err) {
+      tripsGrid.innerHTML = `<div class="placeholder-content" style="min-height: 120px; color: var(--accent-red); grid-column: 1/-1;"><i data-lucide="alert-triangle" class="placeholder-icon"></i><p>Error loading trips: ${err.message}</p></div>`;
+      lucide.createIcons();
+    }
+  }
+
+  function renderSavedTrips(trips) {
+    tripsGrid.innerHTML = '';
+    dashboardTripsCount.textContent = `${trips.length} trip${trips.length === 1 ? '' : 's'} saved`;
+    
+    if (trips.length === 0) {
+      tripsGrid.innerHTML = `
+        <div class="placeholder-content" style="min-height: 180px; grid-column: 1 / -1;">
+          <i data-lucide="compass" class="placeholder-icon" style="stroke-width: 1; opacity: 0.3;"></i>
+          <p>No saved trips found. Generate an itinerary and click "Save Trip" to build your collection!</p>
+        </div>
+      `;
+      lucide.createIcons();
+      return;
+    }
+    
+    trips.forEach(trip => {
+      const date = new Date(trip.created_at);
+      const formattedDate = date.toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' });
+      
+      const card = document.createElement('div');
+      card.className = 'trip-card';
+      card.innerHTML = `
+        <div class="trip-card-header">
+          <div class="trip-card-title-group">
+            <h4 class="trip-card-name">${trip.trip_name}</h4>
+            <div class="trip-card-dest"><i data-lucide="map-pin"></i> ${trip.destination}</div>
+          </div>
+          <span class="trip-card-date">${formattedDate}</span>
+        </div>
+        <div class="trip-card-meta">
+          <span class="meta-pill"><i data-lucide="calendar"></i> ${trip.duration_days} Days</span>
+          <span class="meta-pill"><i data-lucide="banknote"></i> ${trip.budget_limit} ${trip.currency}</span>
+          <span class="meta-pill"><i data-lucide="globe"></i> ${trip.language}</span>
+        </div>
+        <div class="trip-card-actions">
+          <button type="button" class="secondary-btn btn-load" data-id="${trip.id}"><i data-lucide="folder-open"></i> Load</button>
+          <button type="button" class="secondary-btn btn-rename" data-id="${trip.id}"><i data-lucide="pencil"></i> Rename</button>
+          <button type="button" class="secondary-btn btn-delete" data-id="${trip.id}"><i data-lucide="trash-2"></i> Delete</button>
+        </div>
+      `;
+      
+      card.querySelector('.btn-load').addEventListener('click', () => loadTripIntoApp(trip));
+      card.querySelector('.btn-rename').addEventListener('click', () => renameTripPrompt(trip.id, trip.trip_name));
+      card.querySelector('.btn-delete').addEventListener('click', () => deleteTripPrompt(trip.id));
+      
+      tripsGrid.appendChild(card);
+    });
+    
+    lucide.createIcons();
+  }
+
+  function loadTripIntoApp(trip) {
+    document.getElementById('destination').value = trip.destination;
+    document.getElementById('duration').value = trip.duration_days;
+    document.getElementById('budget').value = trip.budget_limit;
+    document.getElementById('currency').value = trip.currency;
+    document.getElementById('language').value = trip.language;
+    
+    // Set checked interests
+    interestsContainer.querySelectorAll('input[type="checkbox"]').forEach(cb => {
+      cb.checked = trip.interests.includes(cb.value);
+    });
+    
+    rawItineraryMarkdown = trip.itinerary_data.final_itinerary;
+    lastItineraryData = {
+      final_itinerary: trip.itinerary_data.final_itinerary,
+      research_notes: trip.itinerary_data.research_notes || '',
+      budget_notes: trip.itinerary_data.budget_notes || ''
+    };
+    
+    itineraryPlaceholder.style.display = 'none';
+    itineraryRendered.innerHTML = marked.parse(trip.itinerary_data.final_itinerary);
+    
+    if (trip.itinerary_data.research_notes) {
+      researchPlaceholder.style.display = 'none';
+      researchRendered.innerHTML = marked.parse(trip.itinerary_data.research_notes);
+    } else {
+      researchPlaceholder.style.display = 'flex';
+      researchRendered.innerHTML = '';
+    }
+    
+    if (trip.itinerary_data.budget_notes) {
+      budgetPlaceholder.style.display = 'none';
+      budgetRendered.innerHTML = marked.parse(trip.itinerary_data.budget_notes);
+    } else {
+      budgetPlaceholder.style.display = 'flex';
+      budgetRendered.innerHTML = '';
+    }
+    
+    const actionsDiv = document.getElementById('itinerary-actions');
+    if (actionsDiv) {
+      actionsDiv.style.display = 'flex';
+      if (saveTripBtn) {
+        saveTripBtn.innerHTML = '<i data-lucide="check" style="width: 14px; height: 14px;"></i> Trip Saved';
+        saveTripBtn.disabled = true;
+      }
+    }
+    
+    updateMap(trip.destination);
+    activateTab('tab-itinerary');
+    alert(`Loaded trip: "${trip.trip_name}"!`);
+  }
+
+  async function renameTripPrompt(tripId, currentName) {
+    const newName = prompt("Enter a new name for your trip:", currentName);
+    if (newName && newName.trim() && newName.trim() !== currentName) {
+      try {
+        await apiRenameTrip(tripId, newName.trim());
+        loadDashboardTrips();
+      } catch (err) {
+        alert(`Error renaming trip: ${err.message}`);
+      }
+    }
+  }
+
+  async function deleteTripPrompt(tripId) {
+    if (confirm("Are you sure you want to delete this trip permanently?")) {
+      try {
+        await apiDeleteTrip(tripId);
+        loadDashboardTrips();
+      } catch (err) {
+        alert(`Error deleting trip: ${err.message}`);
+      }
+    }
+  }
+
+  if (dashboardRefreshBtn) dashboardRefreshBtn.addEventListener('click', loadDashboardTrips);
+
+  // Save Trip Button handlers
+  if (saveTripBtn) {
+    saveTripBtn.addEventListener('click', () => {
+      if (!currentUser) {
+        openAuthModal('login');
+        return;
+      }
+      
+      if (!lastItineraryData || !lastItineraryData.final_itinerary) {
+        alert("No active itinerary found to save!");
+        return;
+      }
+      
+      const dest = document.getElementById('destination').value || 'My Trip';
+      const duration = document.getElementById('duration').value || '3';
+      saveTripNameInput.value = `${duration} Days in ${dest}`;
+      saveTripModal.style.display = 'flex';
+    });
+  }
+
+  if (saveTripModalClose) saveTripModalClose.addEventListener('click', () => { saveTripModal.style.display = 'none'; });
+  if (saveTripModal) saveTripModal.addEventListener('click', (e) => { if (e.target === saveTripModal) saveTripModal.style.display = 'none'; });
+
+  if (saveTripForm) {
+    saveTripForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const tripName = saveTripNameInput.value.trim();
+      if (!tripName) return;
+      
+      const reqData = {
+        destination: document.getElementById('destination').value,
+        duration_days: parseInt(document.getElementById('duration').value),
+        budget_limit: parseFloat(document.getElementById('budget').value),
+        currency: document.getElementById('currency').value,
+        language: document.getElementById('language').value
+      };
+      
+      try {
+        await apiSaveTrip(tripName, reqData, lastItineraryData);
+        saveTripModal.style.display = 'none';
+        
+        saveTripBtn.innerHTML = '<i data-lucide="check" style="width: 14px; height: 14px;"></i> Trip Saved';
+        saveTripBtn.disabled = true;
+        lucide.createIcons();
+        
+        alert(`Trip "${tripName}" successfully saved to your dashboard!`);
+        loadDashboardTrips();
+      } catch (err) {
+        alert(`Error saving trip: ${err.message}`);
+      }
+    });
+  }
+
+  // Restore auth session on startup
+  try {
+    const savedUser = localStorage.getItem('aeroplan_user');
+    if (savedUser) {
+      currentUser = JSON.parse(savedUser);
+    }
+  } catch (e) {
+    console.error("Failed to load saved user session:", e);
+  }
+  
+  updateAuthUI();
 }
 
 if (document.readyState === 'loading') {
