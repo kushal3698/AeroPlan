@@ -62,13 +62,13 @@ async def plan_trip(req: PlanRequest):
         
         # Send initial status
         yield f"data: {json.dumps({'event': 'start', 'message': 'Supervisor initializing nodes...'})}\n\n"
-        await asyncio.sleep(0.8)
+        await asyncio.sleep(0.1)
         
         try:
             for output in agent_app.stream(inputs):
                 for node_name, state_update in output.items():
                     yield f"data: {json.dumps({'event': 'node_start', 'node': node_name})}\n\n"
-                    await asyncio.sleep(1.5)
+                    await asyncio.sleep(0.2)
                     
                     payload = {
                         'event': 'node_complete',
@@ -76,7 +76,7 @@ async def plan_trip(req: PlanRequest):
                         'data': state_update
                     }
                     yield f"data: {json.dumps(payload)}\n\n"
-                    await asyncio.sleep(0.8)
+                    await asyncio.sleep(0.1)
             
             yield f"data: {json.dumps({'event': 'end', 'message': 'Planning completed successfully!'})}\n\n"
         except Exception as e:

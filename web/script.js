@@ -1,5 +1,5 @@
 // Set to your deployed backend URL (e.g. "https://aeroplan-api.onrender.com") or leave empty "" to use the current host.
-const BACKEND_URL = "https://aeroplan-api.onrender.com";
+const BACKEND_URL = "";
 
 function initApp() {
   // Initialize Lucide Icons
