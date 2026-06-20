@@ -18,6 +18,38 @@ Here are previews of the dashboard in action:
 
 ---
 
+## 🌟 Key Features & Advancements
+
+### 🔒 1. Authentication System & User Dashboard
+- **Glassmorphic Login/Signup Modal**: Custom dark-themed authentication overlay with password validation, password strength checks, password visibility toggles, and simulated Google/GitHub OAuth mock buttons.
+- **Header Profile Panel**: Shows the logged-in user's email, initials avatar, and logout controls.
+- **My Saved Trips Section**: A dedicated tab containing the user's travel plans history, offering features to:
+  - **Load**: Instantly populates the active itinerary, research, budget notes, and interactive map pins.
+  - **Rename**: Edit trip labels in-place.
+  - **Delete**: Safely delete trip records (with verification).
+- **Dual Persistence Storage Model**:
+  - **Local Server (`db.json`)**: Persistently saves user credentials (with secure SHA-256 password hashing + unique user-specific salts) and trip plans to a local database file in the project root.
+  - **Vercel Sandbox Fallback (`localStorage`)**: Automatically shifts to client-side localStorage if the serverless API reports a read-only environment or goes offline, ensuring user trips persist across tab closures and device restarts.
+
+### 📄 2. Native PDF Export & ICS Calendar Sync
+- **High-Fidelity Native PDF Print Engine**: Bypasses pixelated or clipped canvas screenshots by utilizing the browser's native print dialog (`window.print()`) with print-media overrides (`@media print` CSS), compiling a vector-sharp, copyable, ink-saving PDF.
+- **RFC-Compliant iCalendar Sync (.ics)**: Dynamically extracts scheduled events and times from generated travel plans and compiles them into a calendar file importable into Google Calendar, Outlook, or Apple Calendar.
+
+### 💸 3. Cost Fact-Checking & Safety budget overrides
+- **Real-World Price Database**: Compiles a curated `REAL_WORLD_COST_DB` matching actual ticket prices for major attractions (e.g. Wonderla ticket price set to ₹1,252).
+- **Survival Budget Floors**: Enforces realistic budget limits per city (e.g. $20/day accommodation floor, $12/day dining floor) to prevent automated budgets from scaling costs below survival limits.
+- **Tight Budget Banners**: Displays multilingual alerts (English, Hindi, Telugu) warning travelers if their budget limit is too low for the chosen destination.
+
+### 🚗 4. Upgraded turn-by-turn routing
+- **Google Directions Integration**: If `GOOGLE_MAPS_API_KEY` is present, fetches live driving routes with distances, durations, and step details.
+- **OSRM Fallback**: Utilizes OSRM/Nominatim OpenStreetMap engines for routing coordinates and steps if no Google API key is configured.
+- **Multilingual Backups**: Automatically uses structured local routes if API queries fail.
+
+### 🗺️ 5. Map Resize Invalidation
+- Listens to window resizing to invalidate the Leaflet map container dynamically using `leafletMap.invalidateSize()`, preventing grey layout gaps on responsive screen sizes.
+
+---
+
 ## 🛠️ Tech Stack
 
 ### Backend
@@ -26,7 +58,7 @@ Here are previews of the dashboard in action:
 - **FastAPI & Uvicorn**: High-performance async web server and Server-Sent Events (SSE) streaming API.
 - **Wikipedia API**: Secondary source for fetching tourist attractions.
 - **OSRM (Open Source Routing Machine)**: Driving/walking directions routing engine.
-- **Nominatim OpenStreetMap**: Geocoding engine (address/name to coordinates conversion).
+- **Nominatim OpenStreetMap**: Geocoding engine.
 
 ### Frontend
 - **Vanilla HTML5 & CSS3**: Glassmorphic UI, glowing borders, dark mode theme, pulsing active nodes, and clean animations.
@@ -66,7 +98,7 @@ graph TD
 
 ### 3. Itinerary Planner Node
 - Integrates the researcher notes and budget details.
-- Resolves coordinates using Nominatim OpenStreetMap and queries **OSRM** to fetch driving directions step-by-step.
+- Resolves coordinates using Nominatim OpenStreetMap and queries OSRM or Google Directions API to fetch driving directions step-by-step.
 - Formats a beautiful markdown response localized to the user's selected language (supports English, Spanish, Japanese, French, German, Hindi, and Telugu).
 
 ---
@@ -85,7 +117,7 @@ Create and activate the virtual environment:
 python -m venv .venv
 
 # Activate venv
-.venv\Scriptsctivate
+.venv\Scripts\activate
 ```
 
 Install the dependencies:
@@ -99,7 +131,7 @@ Create a `.env` file in the root directory:
 OPENAI_API_KEY="your_openai_api_key"
 GOOGLE_MAPS_API_KEY="your_google_maps_api_key"
 ```
-*(Note: If `OPENAI_API_KEY` is not present, the system runs in high-fidelity Simulation Mode. If `GOOGLE_MAPS_API_KEY` is not configured, the map defaults to Leaflet.js).*
+*(Note: If `OPENAI_API_KEY` is not present, the system runs in Simulation Mode. If `GOOGLE_MAPS_API_KEY` is not configured, the map defaults to Leaflet.js).*
 
 ### 3. Run the CLI Version
 Start the interactive CLI:
@@ -124,45 +156,14 @@ Open your browser and navigate to: **[http://localhost:8000](http://localhost:80
 
 Follow these steps to deploy AeroPlan to a public URL.
 
-### 1. Host the Backend on Render
-Render is beginner-friendly and ideal for Python APIs.
+### Host the Entire Application on Vercel
+Vercel natively builds both the frontend and Python backend together using the included [vercel.json](vercel.json) file.
 
 1. **Push your code** to a GitHub repository.
-2. **Create a Render account** and connect your GitHub profile.
-3. Click **"New" ➔ "Web Service"** and select your repository.
-4. Configure the settings:
-   - **Environment**: `Python`
-   - **Build Command**: `pip install -r requirements.txt`
-   - **Start Command**: `uvicorn server:app --host 0.0.0.0 --port 8000`
-5. Under **"Environment"**, add your API keys:
+2. **Create a Vercel account** and connect your GitHub profile.
+3. Click **"Add New" ➔ "Project"** and select your repository.
+4. Set the environment variables in Vercel project settings:
    - `OPENAI_API_KEY` (optional for simulation mode)
    - `GOOGLE_MAPS_API_KEY` (optional for Leaflet fallback)
-6. Click **Deploy**. Render will build the serverless web service and provide you with a live URL (e.g., `https://aeroplan-api.onrender.com`).
-
----
-
-### 2. Host the Frontend on Vercel or Netlify
-You can host the static web dashboard (`/web` directory) on Vercel or Netlify for lightning-fast loads.
-
-1. **Connect the Backend**:
-   Open [web/script.js](web/script.js) in your codebase. At the very top, set the `BACKEND_URL` variable to your live Render backend URL:
-   ```javascript
-   const BACKEND_URL = "https://aeroplan-api.onrender.com"; // Replace with your live Render URL
-   ```
-2. **Push changes** to your GitHub repository.
-3. **Deploy the frontend**:
-   - **On Vercel**: Connect your GitHub repository, choose standard settings, and select `/web` as the root directory (or keep standard settings if deploying the whole repo, since Vercel automatically routes static files).
-   - **On Netlify**: Click "New Site from Git", choose your repository, and set the publish directory to `web/`.
-4. Deploy again. The frontend will now communicate with your live Render backend instead of localhost!
-
-*Note: If you want to deploy both the frontend and backend in one place, Vercel natively builds the whole app (FastAPI backend + static files) together using the included [vercel.json](vercel.json) file.*
-
----
-
-### 3. Setup Custom Domain & HTTPS
-To make it feel like a professional, standalone product:
-1. **Buy a domain name** via Namecheap, GoDaddy, or Google Domains.
-2. In your hosting provider's panel (Vercel, Netlify, or Render), add your custom domain (e.g., `aeroplan.in`).
-3. **Configure DNS Records** with your registrar:
-   - Point an **A Record** to the hosting IP, or a **CNAME Record** to the hosting default domain.
-4. **HTTPS** is automatically provisioned and managed for free via **Let's Encrypt** on Vercel, Netlify, and Render.
+5. Click **Deploy**. Vercel will build the serverless functions and host the static files under a single domain.
+6. The app will automatically fall back to **localStorage** client-side persistence for its auth and saved trips features due to Vercel's read-only serverless environment.
